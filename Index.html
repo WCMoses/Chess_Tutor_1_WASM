@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -246,6 +247,23 @@
                     class="w-8 h-8 rounded-md bg-[#262421] hover:bg-[#3C3936] disabled:opacity-35 flex items-center justify-center text-white font-bold text-sm transition cursor-pointer">
                     ›
                 </button>
+                <button type="button" id="expandHistoryBtn" title="Full History &amp; Game Settings"
+                    class="w-8 h-8 rounded-md bg-[#262421] hover:bg-[#3C3936] active:scale-95 flex items-center justify-center text-[#81B64C] font-extrabold text-base border border-white/10 transition cursor-pointer">
+                    +
+                </button>
+            </div>
+
+            <!-- Expandable Full History & Game Settings Drawer -->
+            <div id="expandedHistoryPanel" class="hidden mt-1.5 p-3 rounded-xl bg-[#312E2B] border border-white/10 shadow-lg space-y-2.5">
+                <div class="flex items-center justify-between border-b border-white/10 pb-1.5">
+                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#81B64C]">Match Settings &amp; Full Move History</span>
+                    <button type="button" id="closeHistoryPanelBtn" class="text-xs font-bold text-[#B0AFAF] hover:text-white px-1.5 py-0.5 rounded bg-[#262421] cursor-pointer">✕</button>
+                </div>
+                <div id="expandedSettingsSummary" class="grid grid-cols-2 gap-1.5 text-[11px] bg-[#262421] p-2 rounded-lg text-[#D4D2CF]"></div>
+                <div>
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-[#8E8C89] mb-1">Full Move List (Tap to Jump)</div>
+                    <div id="fullMoveHistoryGrid" class="max-h-32 overflow-y-auto grid grid-cols-2 gap-1 text-xs pr-1"></div>
+                </div>
             </div>
 
             <!-- Bottom 3-Button Action Bar: Hint | Analyze Move | Analyze Board -->
@@ -382,6 +400,8 @@
         let lastAiMoveContext = null;   // { beforeState, move, afterState }
         let aiMovePulseActive = false;
         let aiPulseTimer = null;
+        let pendingPieceAnimation = null; // { from: [r, c], to: [r, c], color, type }
+        let isHistoryPanelExpanded = false;
 
         // =====================================================================
         // 3. CHESS RULES & ENGINE
@@ -1064,10 +1084,93 @@
             if (activePill) {
                 activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             }
+
+            renderExpandedHistoryPanel();
+        }
+
+        function renderExpandedHistoryPanel() {
+            const panel = document.getElementById('expandedHistoryPanel');
+            if (!panel || panel.classList.contains('hidden')) return;
+
+            const sideLabel = activeConfig.userColor === 'w' ? '♔ White' : '♚ Black';
+            const aggrPct = Math.round(activeConfig.aggression * 100);
+            const aggrTag = aggrPct < 30 ? 'Defensive' : (aggrPct > 70 ? 'Aggressive' : 'Balanced');
+
+            document.getElementById('expandedSettingsSummary').innerHTML = `
+                <div><span class="text-[#8E8C89]">Your Side:</span> <strong class="text-white">${sideLabel}</strong></div>
+                <div><span class="text-[#8E8C89]">Opponent:</span> <strong class="text-[#81B64C]">${activeConfig.elo} ELO</strong></div>
+                <div><span class="text-[#8E8C89]">Play Style:</span> <strong class="text-white">${activeConfig.style}</strong></div>
+                <div><span class="text-[#8E8C89]">Aggression:</span> <strong class="text-[#B9CA43]">${aggrPct}% (${aggrTag})</strong></div>
+            `;
+
+            const gridEl = document.getElementById('fullMoveHistoryGrid');
+            if (timeline.length <= 1) {
+                gridEl.innerHTML = `<div class="col-span-2 text-[#8E8C89] italic text-[11px] py-1">No moves played yet.</div>`;
+                return;
+            }
+
+            let html = '';
+            for (let i = 1; i < timeline.length; i += 2) {
+                const moveNum = Math.ceil(i / 2);
+                const wEntry = timeline[i];
+                const bEntry = timeline[i + 1];
+
+                const wActive = i === viewIndex ? 'bg-[#81B64C] text-white font-bold' : 'bg-[#262421] text-[#E5E5E5] hover:bg-[#3C3936]';
+                html += `<div class="flex items-center gap-1.5 bg-[#262421]/60 px-2 py-1 rounded">
+                    <span class="text-[#8E8C89] font-semibold w-5">${moveNum}.</span>
+                    <button type="button" data-idx="${i}" class="full-hist-btn flex-1 text-left px-1.5 py-0.5 rounded ${wActive} cursor-pointer">${wEntry.notation}</button>
+                </div>`;
+
+                if (bEntry) {
+                    const bActive = (i + 1) === viewIndex ? 'bg-[#81B64C] text-white font-bold' : 'bg-[#262421] text-[#E5E5E5] hover:bg-[#3C3936]';
+                    html += `<div class="flex items-center gap-1.5 bg-[#262421]/60 px-2 py-1 rounded">
+                        <button type="button" data-idx="${i + 1}" class="full-hist-btn flex-1 text-left px-1.5 py-0.5 rounded ${bActive} cursor-pointer">${bEntry.notation}</button>
+                    </div>`;
+                } else {
+                    html += `<div></div>`;
+                }
+            }
+            gridEl.innerHTML = html;
+
+            gridEl.querySelectorAll('.full-hist-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                    jumpToHistoryIndex(idx);
+                });
+            });
+        }
+
+        function toggleHistoryPanel(forceState) {
+            isHistoryPanelExpanded = typeof forceState === 'boolean' ? forceState : !isHistoryPanelExpanded;
+            const panel = document.getElementById('expandedHistoryPanel');
+            const btn = document.getElementById('expandHistoryBtn');
+            if (isHistoryPanelExpanded) {
+                panel.classList.remove('hidden');
+                btn.textContent = '−';
+                renderExpandedHistoryPanel();
+            } else {
+                panel.classList.add('hidden');
+                btn.textContent = '+';
+            }
+        }
+
+        function queuePieceAnimation(move, isReverse = false) {
+            if (!move) return;
+            pendingPieceAnimation = {
+                from: isReverse ? move.to : move.from,
+                to: isReverse ? move.from : move.to,
+                color: move.piece.color,
+                type: isReverse ? move.piece.type : (move.promotion || move.piece.type)
+            };
         }
 
         function jumpToHistoryIndex(idx) {
             if (idx < 0 || idx >= timeline.length) return;
+            if (idx === viewIndex + 1 && timeline[idx].move) {
+                queuePieceAnimation(timeline[idx].move, false);
+            } else if (idx === viewIndex - 1 && timeline[viewIndex].move) {
+                queuePieceAnimation(timeline[viewIndex].move, true);
+            }
             viewIndex = idx;
             selectedSquare = null;
             legalMovesForSelected = [];
@@ -1165,12 +1268,20 @@
                     }
 
                     if (piece) {
-                        html += `<div class="w-[84%] h-[84%] flex items-center justify-center pointer-events-none">${getPieceSVG(piece.color, piece.type)}</div>`;
+                        const isAnimTarget = pendingPieceAnimation &&
+                            pendingPieceAnimation.to[0] === r &&
+                            pendingPieceAnimation.to[1] === c;
+                        const hiddenAttr = isAnimTarget ? 'data-anim-dest="true" style="opacity:0;"' : '';
+                        html += `<div ${hiddenAttr} class="w-[84%] h-[84%] flex items-center justify-center pointer-events-none">${getPieceSVG(piece.color, piece.type)}</div>`;
                     }
 
                     // Semitransparent grey circle indicator on all legal destinations
                     if (isLegalDest) {
-                        html += `<div class="absolute w-[32%] h-[32%] rounded-full bg-neutral-600/55 pointer-events-none z-10"></div>`;
+                        if (piece) {
+                            html += `<div class="absolute inset-1 rounded-full border-[4px] border-neutral-700/45 pointer-events-none z-10"></div>`;
+                        } else {
+                            html += `<div class="absolute w-[32%] h-[32%] rounded-full bg-neutral-600/55 pointer-events-none z-10"></div>`;
+                        }
                     }
 
                     html += `</div>`;
@@ -1178,6 +1289,49 @@
             }
 
             grid.innerHTML = html;
+
+            // Execute smooth FLIP-style slide animation for the moved piece
+            if (pendingPieceAnimation) {
+                const anim = pendingPieceAnimation;
+                pendingPieceAnimation = null;
+                const dFromR = flipped ? 7 - anim.from[0] : anim.from[0];
+                const dFromC = flipped ? 7 - anim.from[1] : anim.from[1];
+                const dToR = flipped ? 7 - anim.to[0] : anim.to[0];
+                const dToC = flipped ? 7 - anim.to[1] : anim.to[1];
+
+                const dxPct = (dFromC - dToC) * 100;
+                const dyPct = (dFromR - dToR) * 100;
+
+                const flyer = document.createElement('div');
+                flyer.style.position = 'absolute';
+                flyer.style.width = '12.5%';
+                flyer.style.height = '12.5%';
+                flyer.style.left = `${dToC * 12.5}%`;
+                flyer.style.top = `${dToR * 12.5}%`;
+                flyer.style.display = 'flex';
+                flyer.style.alignItems = 'center';
+                flyer.style.justifyContent = 'center';
+                flyer.style.pointerEvents = 'none';
+                flyer.style.zIndex = '25';
+                flyer.style.transform = `translate(${dxPct}%, ${dyPct}%) scale(1.06)`;
+                flyer.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
+                flyer.innerHTML = `<div class="w-[84%] h-[84%] flex items-center justify-center drop-shadow-md">${getPieceSVG(anim.color, anim.type)}</div>`;
+
+                const boardContainer = grid.parentElement;
+                boardContainer.appendChild(flyer);
+
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        flyer.style.transform = 'translate(0%, 0%) scale(1)';
+                    });
+                });
+
+                setTimeout(() => {
+                    flyer.remove();
+                    const destPiece = grid.querySelector('[data-anim-dest="true"]');
+                    if (destPiece) destPiece.style.opacity = '1';
+                }, 230);
+            }
 
             // Attach click handlers to squares
             grid.querySelectorAll('.board-sq').forEach(sqEl => {
@@ -1217,28 +1371,32 @@
                 clearedAnalysis = true;
             }
 
-            // If user taps the opponent's recently moved piece, show analysis of opponent's move
+            // 1. First check if user has a piece selected and tapped a legal destination (including capturing the opponent's last-moved piece!)
+            if (viewIndex === timeline.length - 1 && state.turn === activeConfig.userColor) {
+                const chosenMove = legalMovesForSelected.find(m => m.to[0] === r && m.to[1] === c);
+                if (chosenMove) {
+                    executeUserMove(chosenMove);
+                    return;
+                }
+            }
+
+            // 2. If user taps the opponent's recently moved piece (without executing a capture), show analysis of opponent's move
             if (state.lastMove && state.lastMove.to[0] === r && state.lastMove.to[1] === c &&
                 state.lastMove.piece.color !== activeConfig.userColor && lastAiMoveContext) {
+                selectedSquare = null;
+                legalMovesForSelected = [];
                 setCoachFeedback("Opponent Move Breakdown", analyzeAiMoveDetailed(lastAiMoveContext), true);
-                if (clearedAnalysis) renderBoard();
+                renderBoard();
                 return;
             }
 
-            // Only allow playing from the latest board state when it's user's turn
+            // Only allow selecting pieces from the latest board state when it's user's turn
             if (viewIndex !== timeline.length - 1 || state.turn !== activeConfig.userColor) {
                 if (clearedAnalysis) renderBoard();
                 return;
             }
 
-            // Check if tapped square is a legal destination for selected piece
-            const chosenMove = legalMovesForSelected.find(m => m.to[0] === r && m.to[1] === c);
-            if (chosenMove) {
-                executeUserMove(chosenMove);
-                return;
-            }
-
-            // Otherwise select user's piece
+            // 3. Otherwise select user's piece
             const tappedPiece = state.board[r][c];
             if (tappedPiece && tappedPiece.color === activeConfig.userColor) {
                 selectedSquare = [r, c];
@@ -1269,6 +1427,7 @@
             selectedSquare = null;
             legalMovesForSelected = [];
             resetHintState();
+            queuePieceAnimation(move, false);
             renderBoard();
 
             // Check game end
@@ -1305,6 +1464,7 @@
 
                     timeline.push({ state: afterAi, move: aiMove, notation });
                     viewIndex = timeline.length - 1;
+                    queuePieceAnimation(aiMove, false);
 
                     // Trigger brief pulse highlight on moved piece and Analyze Move button
                     aiMovePulseActive = true;
@@ -1432,8 +1592,17 @@
             // In-Game Top Bar & Coach Controls
             document.getElementById('openNewGameBtn').addEventListener('click', () => {
                 if (isCoachExpanded) toggleCoachExpand(false);
+                if (isHistoryPanelExpanded) toggleHistoryPanel(false);
                 document.getElementById('gameScreen').classList.add('hidden');
                 document.getElementById('startScreen').classList.remove('hidden');
+            });
+
+            document.getElementById('expandHistoryBtn').addEventListener('click', () => {
+                toggleHistoryPanel();
+            });
+
+            document.getElementById('closeHistoryPanelBtn').addEventListener('click', () => {
+                toggleHistoryPanel(false);
             });
 
             document.getElementById('coachBlurToggleBtn').addEventListener('click', () => {
@@ -1535,3 +1704,4 @@
     </script>
 </body>
 </html>
+```
