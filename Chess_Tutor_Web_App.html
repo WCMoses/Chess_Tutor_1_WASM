@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Chess Tutor" />
+    <title>Chess Tutor AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #262421;
+            color: #EEEEEE;
+            margin: 0;
+            padding: 0;
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 999px;
+            background: #45423E;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #81B64C;
+            margin-top: -7px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+        }
+        input[type=range].aggr-slider::-webkit-slider-thumb {
+            background: #B9CA43;
+        }
+        input[type=range].opacity-slider::-webkit-slider-thumb {
+            background: #38BDF8;
+        }
+        /* Hide scrollbar on horizontal move strip */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Subtle pulse for newly moved AI piece/button */
+        @keyframes softPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 246, 130, 0.75); }
+            50% { box-shadow: 0 0 0 6px rgba(245, 246, 130, 0); }
+        }
+        .ai-pulse {
+            animation: softPulse 1.1s ease-in-out 3;
+        }
+    </style>
+</head>
+<body class="min-h-[100dvh] w-full flex flex-col items-center justify-start bg-[#262421]">
+
+    <!-- ===================================================================== -->
+    <!-- 1. START / NEW GAME SETUP SCREEN                                      -->
+    <!-- ===================================================================== -->
+    <div id="startScreen" class="w-full max-w-[480px] min-h-[100dvh] px-4 py-5 flex flex-col justify-between">
+        <div>
+            <!-- Brand Header -->
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-11 h-11 rounded-xl bg-[#81B64C] flex items-center justify-center text-2xl shadow-md">
+                    🎓
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold text-white tracking-tight">Chess Tutor AI</h1>
+                    <p class="text-xs text-[#A8A6A3]">Configure your opponent &amp; start playing</p>
+                </div>
+            </div>
+
+            <!-- Setup Card -->
+            <div class="bg-[#312E2B] rounded-2xl p-4 space-y-5 shadow-xl border border-white/5">
+                <!-- Side Selection -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#B0AFAF] mb-2">Play As</label>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button type="button" id="setupWhiteBtn"
+                            class="py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white">
+                            ♔ White
+                        </button>
+                        <button type="button" id="setupBlackBtn"
+                            class="py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]">
+                            ♚ Black
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ELO Rating Slider -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label for="setupEloSlider" class="text-xs font-bold uppercase tracking-wider text-[#B0AFAF]">Opponent Rating</label>
+                        <span id="setupEloLabel" class="text-sm font-extrabold text-[#81B64C]">800 ELO</span>
+                    </div>
+                    <input id="setupEloSlider" type="range" min="400" max="2200" step="50" value="800" class="w-full" />
+                    <div class="flex justify-between text-[11px] text-[#8E8C89] mt-1">
+                        <span>400 Beginner</span>
+                        <span>1300 Club</span>
+                        <span>2200 Master</span>
+                    </div>
+                </div>
+
+                <!-- Aggressiveness Slider -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label for="setupAggrSlider" class="text-xs font-bold uppercase tracking-wider text-[#B0AFAF]">Aggressiveness</label>
+                        <span id="setupAggrLabel" class="text-sm font-extrabold text-[#B9CA43]">50% (Balanced)</span>
+                    </div>
+                    <input id="setupAggrSlider" type="range" min="0" max="100" step="5" value="50" class="w-full aggr-slider" />
+                    <div class="flex justify-between text-[11px] text-[#8E8C89] mt-1">
+                        <span>Solid / Defensive</span>
+                        <span>Balanced</span>
+                        <span>Reckless Attack</span>
+                    </div>
+                </div>
+
+                <!-- Personality Play Style -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#B0AFAF] mb-2">Opponent Style</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" data-style="Positional"
+                            class="style-choice-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white">
+                            Positional
+                        </button>
+                        <button type="button" data-style="Tactical"
+                            class="style-choice-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]">
+                            Tactical
+                        </button>
+                        <button type="button" data-style="Chaotic"
+                            class="style-choice-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]">
+                            Chaotic
+                        </button>
+                    </div>
+                    <p id="setupStyleDesc" class="text-xs text-[#9E9C99] mt-2 leading-relaxed">
+                        Controls the center, builds solid pawn chains, and avoids unnecessary risks.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Match CTA -->
+        <button type="button" id="startMatchBtn"
+            class="w-full py-4 mt-4 rounded-xl bg-[#81B64C] hover:bg-[#73a442] active:scale-[0.99] text-white font-extrabold text-base shadow-lg transition cursor-pointer">
+            Start Match
+        </button>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 2. ACTIVE GAME SCREEN                                                 -->
+    <!-- ===================================================================== -->
+    <div id="gameScreen" class="hidden w-full max-w-[480px] min-h-[100dvh] px-2.5 pt-2 pb-3 flex flex-col justify-between">
+
+        <!-- Top Compact Bar: Title + Small New Game Button -->
+        <div class="flex items-center justify-between gap-2 mb-1.5">
+            <div class="min-w-0">
+                <h1 class="text-base font-extrabold text-white leading-tight truncate">Chess Tutor AI</h1>
+                <p id="headerSubtitle" class="text-[11px] text-[#A8A6A3] truncate">
+                    Opponent: 800 ELO • Positional (50% Aggr.)
+                </p>
+            </div>
+            <button type="button" id="openNewGameBtn"
+                class="shrink-0 px-2.5 py-1.5 rounded-lg bg-[#3C3936] hover:bg-[#4A4642] active:scale-95 text-white text-xs font-bold border border-white/10 transition cursor-pointer">
+                New Game
+            </button>
+        </div>
+
+        <!-- Coach Feedback Panel (Generous default height; expands transparently over board) -->
+        <div class="relative z-30 mb-1.5">
+            <div id="coachCard"
+                style="background-color: rgba(49, 46, 43, 0.96);"
+                class="rounded-xl p-2.5 border border-white/10 shadow-md transition-all duration-200">
+                <div class="flex items-start gap-2.5">
+                    <!-- Graduation Cap Blur Toggle Button -->
+                    <button type="button" id="coachBlurToggleBtn" title="Toggle blur on Coach text"
+                        class="shrink-0 w-9 h-9 rounded-lg bg-[#81B64C] hover:bg-[#73a442] active:scale-95 flex items-center justify-center text-lg shadow transition cursor-pointer">
+                        🎓
+                    </button>
+
+                    <!-- Feedback Text Area -->
+                    <div id="coachTextContainer" class="flex-1 min-w-0 transition duration-200 cursor-pointer">
+                        <div class="flex items-center justify-between gap-2 mb-0.5">
+                            <span id="coachTitle" class="text-[11px] font-extrabold uppercase tracking-wider text-[#81B64C]">
+                                Coach Feedback
+                            </span>
+                            <button type="button" id="coachExpandBtn"
+                                class="hidden px-2 py-0.5 rounded bg-[#262421]/80 hover:bg-[#262421] text-[10px] font-bold text-[#F5F682] border border-white/10 cursor-pointer">
+                                Expand
+                            </button>
+                        </div>
+                        <div id="coachMessageScroll" class="max-h-[78px] overflow-y-auto pr-1">
+                            <p id="coachMessage" class="text-xs text-[#EFEFEF] leading-relaxed whitespace-pre-line">
+                                Tap any piece to see legal moves, or use Hint for principle-based coaching.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom-Anchored Board & Controls Stack (Pushes board downward for larger text space) -->
+        <div class="mt-auto flex flex-col">
+
+            <!-- Transparency Slider (Visible when Coach text is expanded over board) -->
+            <div id="overlaySliderBar" class="hidden mb-1.5 px-2.5 py-1.5 rounded-lg bg-[#312E2B] border border-white/10 flex items-center gap-2">
+                <span class="text-[10px] font-bold text-[#B0AFAF] whitespace-nowrap">Board</span>
+                <input id="coachOpacitySlider" type="range" min="15" max="98" step="1" value="85" class="flex-1 opacity-slider" />
+                <span class="text-[10px] font-bold text-[#B0AFAF] whitespace-nowrap">Text</span>
+            </div>
+
+            <!-- Interactive Chess Board Container -->
+            <div class="relative w-full aspect-square rounded-md overflow-hidden shadow-2xl border border-black/40">
+                <div id="chessBoardGrid" class="w-full h-full grid grid-cols-8 grid-rows-8"></div>
+                <!-- SVG Arrow Overlay for Hint 3/3 and Move Analysis -->
+                <svg id="boardArrowOverlay" viewBox="0 0 800 800" class="pointer-events-none absolute inset-0 w-full h-full z-20"></svg>
+            </div>
+
+            <!-- Captured Pieces & Material Advantage Strip -->
+            <div class="mt-1.5 px-2 py-1 rounded-lg bg-[#2D2A27] border border-white/5 flex items-center justify-between min-h-[28px]">
+                <div id="capturedByBlackRow" class="flex items-center gap-0.5 text-xs"></div>
+                <div id="capturedByWhiteRow" class="flex items-center gap-0.5 text-xs"></div>
+            </div>
+
+            <!-- Sequential Forward / Back Move History Bar -->
+            <div class="mt-1.5 px-1.5 py-1 rounded-lg bg-[#312E2B] border border-white/5 flex items-center gap-1.5">
+                <button type="button" id="prevMoveBtn" title="Step Back"
+                    class="w-8 h-8 rounded-md bg-[#262421] hover:bg-[#3C3936] disabled:opacity-35 flex items-center justify-center text-white font-bold text-sm transition cursor-pointer">
+                    ‹
+                </button>
+                <div id="moveHistoryList" class="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar text-xs px-1">
+                    <span class="text-[#8E8C89] italic text-[11px]">No moves yet</span>
+                </div>
+                <button type="button" id="nextMoveBtn" title="Step Forward"
+                    class="w-8 h-8 rounded-md bg-[#262421] hover:bg-[#3C3936] disabled:opacity-35 flex items-center justify-center text-white font-bold text-sm transition cursor-pointer">
+                    ›
+                </button>
+            </div>
+
+            <!-- Bottom 3-Button Action Bar: Hint | Analyze Move | Analyze Board -->
+            <div class="mt-1.5 grid grid-cols-3 gap-2">
+                <!-- 3-Stage Progressive Hint Button -->
+                <button type="button" id="hintBtn"
+                    class="py-2 px-2 rounded-xl bg-[#312E2B] hover:bg-[#3C3936] active:scale-[0.98] border border-white/10 flex flex-col items-center justify-center gap-1 transition cursor-pointer">
+                    <span class="text-xs font-extrabold text-[#F5F682]">💡 Hint</span>
+                    <div class="flex items-center gap-1 w-full px-2">
+                        <span id="hintPip1" class="h-1.5 flex-1 rounded-full bg-white/20 transition-colors"></span>
+                        <span id="hintPip2" class="h-1.5 flex-1 rounded-full bg-white/20 transition-colors"></span>
+                        <span id="hintPip3" class="h-1.5 flex-1 rounded-full bg-white/20 transition-colors"></span>
+                    </div>
+                </button>
+
+                <!-- Analyze Move Button -->
+                <button type="button" id="analyzeMoveBtn"
+                    class="py-2 px-2 rounded-xl bg-[#312E2B] hover:bg-[#3C3936] active:scale-[0.98] border border-white/10 flex flex-col items-center justify-center transition cursor-pointer">
+                    <span class="text-xs font-extrabold text-white">Analyze Move</span>
+                    <span id="analyzeMoveSub" class="text-[10px] text-[#9E9C99]">Last Move</span>
+                </button>
+
+                <!-- Analyze Board Button -->
+                <button type="button" id="analyzeBoardBtn"
+                    class="py-2 px-2 rounded-xl bg-[#312E2B] hover:bg-[#3C3936] active:scale-[0.98] border border-white/10 flex flex-col items-center justify-center transition cursor-pointer">
+                    <span class="text-xs font-extrabold text-[#81B64C]">Analyze Board</span>
+                    <span class="text-[10px] text-[#9E9C99]">Full Position</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        // =====================================================================
+        // 1. CONSTANTS, PIECE VALUES & VECTOR ARTWORK
+        // =====================================================================
+        const PIECE_VALUES = { P: 1, N: 3, B: 3, R: 5, Q: 9, K: 0 };
+        const ENGINE_VALUES = { P: 100, N: 320, B: 330, R: 500, Q: 900, K: 20000 };
+        const STYLE_DESCRIPTIONS = {
+            Positional: "Controls the center, builds solid pawn chains, and avoids unnecessary risks.",
+            Tactical: "Hunts for forks, pins, open files, and sharp piece combinations.",
+            Chaotic: "Pushes flank pawns early, loves trades, and creates unpredictable boards."
+        };
+
+        // Custom crisp Neo-style vector SVG pieces matching the user's screenshot
+        function getPieceSVG(color, type) {
+            const fill = color === 'w' ? '#F8F8F8' : '#545454';
+            const shade = color === 'w' ? '#D6D6D6' : '#383838';
+            const stroke = color === 'w' ? '#333333' : '#1E1E1E';
+            const sw = '2.2';
+
+            switch (type) {
+                case 'P':
+                    return `<svg viewBox="0 0 45 45" class="w-full h-full pointer-events-none select-none">
+                        <path d="M13.5 34.5 Q16 23.5 18.5 20 L26.5 20 Q29 23.5 31.5 34.5 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                        <rect x="15.5" y="18" width="14" height="3.2" rx="1.5" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>
+                        <circle cx="22.5" cy="12.2" r="6.4" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>
+                        <path d="M10 39.5 L35 39.5 L32.5 34.5 L12.5 34.5 Z" fill="${shade}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                    </svg>`;
+                case 'R':
+                    return `<svg viewBox="0 0 45 45" class="w-full h-full pointer-events-none select-none">
+                        <path d="M12 35 L14 15.5 L31 15.5 L33 35 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                        <path d="M11 15.5 L11 7.5 L16.5 7.5 L16.5 10.5 L20 10.5 L20 7.5 L25 7.5 L25 10.5 L28.5 10.5 L28.5 7.5 L34 7.5 L34 15.5 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                        <path d="M9 39.5 L36 39.5 L33.5 35 L11.5 35 Z" fill="${shade}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                    </svg>`;
+                case 'N':
+                    return `<svg viewBox="0 0 45 45" class="w-full h-full pointer-events-none select-none">
+                        <path d="M11.5 35 Q12 20.5 17 13.5 L15.8 7 L21 9.5 Q29.5 10 33.2 18 L30.5 22 Q25 20.8 23 22 Q29.5 27 32.5 35 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                        <circle cx="23" cy="14" r="1.2" fill="${stroke}"/>
+                        <path d="M9.5 39.5 L35.5 39.5 L33 35 L11 35 Z" fill="${shade}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                    </svg>`;
+                case 'B':
+                    return `<svg viewBox="0 0 45 45" class="w-full h-full pointer-events-none select-none">
+                        <path d="M12.5 35 Q11.8 19 22.5 9.2 Q33.2 19 32.5 35 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                        <circle cx="22.5" cy="6.4" r="2.4" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>
+                        <line x1="19.8" y1="20" x2="25" y2="14.8" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round"/>
+                        <path d="M9.5 39.5 L35.5 39.5 L33 35 L12 35 Z" fill="${shade}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                    </svg>`;
+                case 'Q':
+                    return `<svg viewBox="0 0 45 45" class="w-full h-full pointer-events-none select-none">
+                        <path d="M11.8 35 L7.2 13.5 L15.5 22.5 L18 10.5 L22.5 21.5 L27 10.5 L29.5 22.5 L37.8 13.5 L33.2 35 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                        <circle cx="7.2" cy="12" r="2" fill="${fill}" stroke="${stroke}" stroke-width="1.8"/>
+                        <circle cx="18" cy="9" r="2" fill="${fill}" stroke="${stroke}" stroke-width="1.8"/>
+                        <circle cx="27" cy="9" r="2" fill="${fill}" stroke="${stroke}" stroke-width="1.8"/>
+                        <circle cx="37.8" cy="12" r="2" fill="${fill}" stroke="${stroke}" stroke-width="1.8"/>
+                        <path d="M9.5 39.5 L35.5 39.5 L33 35 L12 35 Z" fill="${shade}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                    </svg>`;
+                case 'K':
+                    return `<svg viewBox="0 0 45 45" class="w-full h-full pointer-events-none select-none">
+                        <line x1="22.5" y1="4.5" x2="22.5" y2="12" stroke="${stroke}" stroke-width="2.6" stroke-linecap="round"/>
+                        <line x1="18.5" y1="7.8" x2="26.5" y2="7.8" stroke="${stroke}" stroke-width="2.6" stroke-linecap="round"/>
+                        <path d="M11.8 35 Q7.2 18 16.2 14.5 Q22.5 18 28.8 14.5 Q37.8 18 33.2 35 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                        <line x1="22.5" y1="16.2" x2="22.5" y2="34.2" stroke="${stroke}" stroke-width="1.9"/>
+                        <path d="M9.5 39.5 L35.5 39.5 L33 35 L12 35 Z" fill="${shade}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/>
+                    </svg>`;
+                default:
+                    return '';
+            }
+        }
+
+        function getMiniCapturedIcon(color, type) {
+            return `<span class="inline-block w-4 h-4 -mr-0.5">${getPieceSVG(color, type)}</span>`;
+        }
+
+        // =====================================================================
+        // 2. APPLICATION STATE
+        // =====================================================================
+        let setupConfig = {
+            userColor: 'w',
+            elo: 800,
+            aggression: 0.50,
+            style: 'Positional'
+        };
+
+        let activeConfig = { ...setupConfig };
+        let timeline = []; // Array of { state, move, notation, userEval, aiEval }
+        let viewIndex = 0; // Index inside timeline currently displayed
+        let selectedSquare = null; // [r, c]
+        let legalMovesForSelected = [];
+        let isAiThinking = false;
+
+        let hintLevel = 0; // 0 = none, 1 = principle, 2 = piece + principles, 3 = move + full detail
+        let cachedHintData = null;
+        let analysisArrow = null; // { from: [r, c], to: [r, c], color?: string }
+        let analysisHighlightSq = null; // [r, c]
+        let isCoachTextBlurred = false;
+        let isCoachExpanded = false;
+        let coachOverlayOpacity = 0.85;
+
+        let lastUserMoveContext = null; // { beforeState, move, afterState, bestMove }
+        let lastAiMoveContext = null;   // { beforeState, move, afterState }
+        let aiMovePulseActive = false;
+        let aiPulseTimer = null;
+
+        // =====================================================================
+        // 3. CHESS RULES & ENGINE
+        // =====================================================================
+        function createInitialState() {
+            const b = Array.from({ length: 8 }, () => Array(8).fill(null));
+            const back = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
+            for (let c = 0; c < 8; c++) {
+                b[0][c] = { color: 'b', type: back[c], moved: false };
+                b[1][c] = { color: 'b', type: 'P', moved: false };
+                b[6][c] = { color: 'w', type: 'P', moved: false };
+                b[7][c] = { color: 'w', type: back[c], moved: false };
+            }
+            return {
+                board: b,
+                turn: 'w',
+                lastMove: null,
+                enPassant: null
+            };
+        }
+
+        function cloneState(state) {
+            return {
+                board: state.board.map(row => row.map(cell => (cell ? { ...cell } : null))),
+                turn: state.turn,
+                lastMove: state.lastMove ? { ...state.lastMove } : null,
+                enPassant: state.enPassant ? [...state.enPassant] : null
+            };
+        }
+
+        function sqToAlg(r, c) {
+            return String.fromCharCode(97 + c) + (8 - r);
+        }
+
+        function applyMove(state, move) {
+            const next = cloneState(state);
+            const [fr, fc] = move.from;
+            const [tr, tc] = move.to;
+            const piece = next.board[fr][fc];
+
+            next.board[fr][fc] = null;
+            next.board[tr][tc] = {
+                color: piece.color,
+                type: move.promotion || piece.type,
+                moved: true
+            };
+
+            if (move.isEnPassant) {
+                next.board[fr][tc] = null;
+            }
+
+            if (move.isCastling) {
+                if (tc === 6) {
+                    next.board[fr][5] = { ...next.board[fr][7], moved: true };
+                    next.board[fr][7] = null;
+                } else if (tc === 2) {
+                    next.board[fr][3] = { ...next.board[fr][0], moved: true };
+                    next.board[fr][0] = null;
+                }
+            }
+
+            next.enPassant =
+                piece.type === 'P' && Math.abs(tr - fr) === 2
+                    ? [(fr + tr) / 2, fc]
+                    : null;
+
+            next.turn = state.turn === 'w' ? 'b' : 'w';
+            next.lastMove = move;
+            return next;
+        }
+
+        function isSquareAttacked(state, r, c, byColor) {
+            const b = state.board;
+            const pawnDir = byColor === 'w' ? 1 : -1;
+            for (const dc of [-1, 1]) {
+                const pr = r + pawnDir, pc = c + dc;
+                if (pr >= 0 && pr < 8 && pc >= 0 && pc < 8) {
+                    const p = b[pr][pc];
+                    if (p && p.color === byColor && p.type === 'P') return true;
+                }
+            }
+
+            const kOffsets = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
+            for (const [dr, dc] of kOffsets) {
+                const nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                    const p = b[nr][nc];
+                    if (p && p.color === byColor && p.type === 'N') return true;
+                }
+            }
+
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const kr = r + dr, kc = c + dc;
+                    if (kr >= 0 && kr < 8 && kc >= 0 && kc < 8) {
+                        const p = b[kr][kc];
+                        if (p && p.color === byColor && p.type === 'K') return true;
+                    }
+                }
+            }
+
+            const ortho = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+            for (const [dr, dc] of ortho) {
+                let cr = r + dr, cc = c + dc;
+                while (cr >= 0 && cr < 8 && cc >= 0 && cc < 8) {
+                    const p = b[cr][cc];
+                    if (p) {
+                        if (p.color === byColor && (p.type === 'R' || p.type === 'Q')) return true;
+                        break;
+                    }
+                    cr += dr;
+                    cc += dc;
+                }
+            }
+
+            const diag = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+            for (const [dr, dc] of diag) {
+                let cr = r + dr, cc = c + dc;
+                while (cr >= 0 && cr < 8 && cc >= 0 && cc < 8) {
+                    const p = b[cr][cc];
+                    if (p) {
+                        if (p.color === byColor && (p.type === 'B' || p.type === 'Q')) return true;
+                        break;
+                    }
+                    cr += dr;
+                    cc += dc;
+                }
+            }
+            return false;
+        }
+
+        function isKingInCheck(state, color) {
+            const opp = color === 'w' ? 'b' : 'w';
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = state.board[r][c];
+                    if (p && p.color === color && p.type === 'K') {
+                        return isSquareAttacked(state, r, c, opp);
+                    }
+                }
+            }
+            return true;
+        }
+
+        function generatePseudoMoves(state, color) {
+            const moves = [];
+            const b = state.board;
+            const opp = color === 'w' ? 'b' : 'w';
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = b[r][c];
+                    if (!p || p.color !== color) continue;
+
+                    if (p.type === 'P') {
+                        const dir = color === 'w' ? -1 : 1;
+                        const startRow = color === 'w' ? 6 : 1;
+                        const promoRow = color === 'w' ? 0 : 7;
+                        const r1 = r + dir;
+
+                        if (r1 >= 0 && r1 < 8 && !b[r1][c]) {
+                            moves.push({
+                                from: [r, c],
+                                to: [r1, c],
+                                piece: p,
+                                promotion: r1 === promoRow ? 'Q' : null
+                            });
+                            const r2 = r + dir * 2;
+                            if (r === startRow && !b[r2][c]) {
+                                moves.push({ from: [r, c], to: [r2, c], piece: p });
+                            }
+                        }
+
+                        for (const dc of [-1, 1]) {
+                            const tc = c + dc;
+                            if (tc < 0 || tc >= 8 || r1 < 0 || r1 >= 8) continue;
+                            const target = b[r1][tc];
+                            if (target && target.color === opp) {
+                                moves.push({
+                                    from: [r, c],
+                                    to: [r1, tc],
+                                    piece: p,
+                                    captured: target,
+                                    promotion: r1 === promoRow ? 'Q' : null
+                                });
+                            } else if (state.enPassant && state.enPassant[0] === r1 && state.enPassant[1] === tc) {
+                                moves.push({
+                                    from: [r, c],
+                                    to: [r1, tc],
+                                    piece: p,
+                                    captured: b[r][tc],
+                                    isEnPassant: true
+                                });
+                            }
+                        }
+                    } else if (p.type === 'N') {
+                        const offs = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
+                        for (const [dr, dc] of offs) {
+                            const tr = r + dr, tc = c + dc;
+                            if (tr >= 0 && tr < 8 && tc >= 0 && tc < 8) {
+                                const t = b[tr][tc];
+                                if (!t || t.color === opp) {
+                                    moves.push({ from: [r, c], to: [tr, tc], piece: p, captured: t || null });
+                                }
+                            }
+                        }
+                    } else if (p.type === 'K') {
+                        for (let dr = -1; dr <= 1; dr++) {
+                            for (let dc = -1; dc <= 1; dc++) {
+                                if (dr === 0 && dc === 0) continue;
+                                const tr = r + dr, tc = c + dc;
+                                if (tr >= 0 && tr < 8 && tc >= 0 && tc < 8) {
+                                    const t = b[tr][tc];
+                                    if (!t || t.color === opp) {
+                                        moves.push({ from: [r, c], to: [tr, tc], piece: p, captured: t || null });
+                                    }
+                                }
+                            }
+                        }
+                        if (!p.moved && !isKingInCheck(state, color)) {
+                            const kr = b[r][7];
+                            if (kr && kr.type === 'R' && !kr.moved && !b[r][5] && !b[r][6] &&
+                                !isSquareAttacked(state, r, 5, opp) && !isSquareAttacked(state, r, 6, opp)) {
+                                moves.push({ from: [r, c], to: [r, 6], piece: p, isCastling: true });
+                            }
+                            const qr = b[r][0];
+                            if (qr && qr.type === 'R' && !qr.moved && !b[r][1] && !b[r][2] && !b[r][3] &&
+                                !isSquareAttacked(state, r, 3, opp) && !isSquareAttacked(state, r, 2, opp)) {
+                                moves.push({ from: [r, c], to: [r, 2], piece: p, isCastling: true });
+                            }
+                        }
+                    } else {
+                        const dirs = [];
+                        if (p.type === 'R' || p.type === 'Q') dirs.push([-1, 0], [1, 0], [0, -1], [0, 1]);
+                        if (p.type === 'B' || p.type === 'Q') dirs.push([-1, -1], [-1, 1], [1, -1], [1, 1]);
+                        for (const [dr, dc] of dirs) {
+                            let tr = r + dr, tc = c + dc;
+                            while (tr >= 0 && tr < 8 && tc >= 0 && tc < 8) {
+                                const t = b[tr][tc];
+                                if (!t) {
+                                    moves.push({ from: [r, c], to: [tr, tc], piece: p });
+                                } else {
+                                    if (t.color === opp) {
+                                        moves.push({ from: [r, c], to: [tr, tc], piece: p, captured: t });
+                                    }
+                                    break;
+                                }
+                                tr += dr;
+                                tc += dc;
+                            }
+                        }
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function getLegalMoves(state, color = state.turn) {
+            return generatePseudoMoves(state, color).filter(m => {
+                const sim = applyMove(state, m);
+                return !isKingInCheck(sim, color);
+            });
+        }
+
+        function formatMoveNotation(move, afterState) {
+            if (move.isCastling) return move.to[1] === 6 ? 'O-O' : 'O-O-O';
+            const cap = move.captured || move.isEnPassant ? 'x' : '';
+            const prefix =
+                move.piece.type === 'P'
+                    ? (cap ? String.fromCharCode(97 + move.from[1]) : '')
+                    : move.piece.type;
+            const promo = move.promotion ? `=${move.promotion}` : '';
+            const checkSuffix = afterState && isKingInCheck(afterState, afterState.turn)
+                ? (getLegalMoves(afterState, afterState.turn).length === 0 ? '#' : '+')
+                : '';
+            return `${prefix}${cap}${sqToAlg(move.to[0], move.to[1])}${promo}${checkSuffix}`;
+        }
+
+        // =====================================================================
+        // 4. AI EVALUATION, PRINCIPLE-BASED HINTS & TUTOR ANALYZER
+        // =====================================================================
+        function evaluateStateForColor(state, perspectiveColor, config = activeConfig) {
+            let score = 0;
+            const aggrFactor = (config.aggression - 0.5) * 2;
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = state.board[r][c];
+                    if (!p) continue;
+                    const mult = p.color === perspectiveColor ? 1 : -1;
+                    let val = ENGINE_VALUES[p.type];
+
+                    const forward = p.color === 'w' ? 7 - r : r;
+                    const centerDist = Math.abs(3.5 - r) + Math.abs(3.5 - c);
+                    const centerBonus = Math.round((7 - centerDist) * 6);
+
+                    if (config.style === 'Positional') {
+                        val += centerBonus;
+                        if (p.type === 'P' && c >= 2 && c <= 5) val += 14;
+                        if (p.type === 'K' && forward === 0 && (c <= 2 || c >= 6)) val += 45;
+                    } else if (config.style === 'Tactical') {
+                        val += Math.round(centerBonus * 1.35);
+                        if (p.type === 'N' || p.type === 'B') val += forward * 10;
+                        if (p.type === 'Q' || p.type === 'R') val += forward * 8;
+                    } else if (config.style === 'Chaotic') {
+                        if (p.type === 'P' && (c <= 1 || c >= 6)) val += forward * 14;
+                    }
+
+                    if (p.type !== 'K') {
+                        val += Math.round(forward * 11 * aggrFactor);
+                    }
+
+                    score += val * mult;
+                }
+            }
+            return score;
+        }
+
+        function minimax(state, depth, alpha, beta, maximizing, aiColor, config) {
+            if (depth === 0) return evaluateStateForColor(state, aiColor, config);
+
+            const turnColor = maximizing ? aiColor : (aiColor === 'w' ? 'b' : 'w');
+            const moves = getLegalMoves(state, turnColor);
+
+            if (moves.length === 0) {
+                if (isKingInCheck(state, turnColor)) {
+                    return maximizing ? -99999 - depth : 99999 + depth;
+                }
+                return 0;
+            }
+
+            if (maximizing) {
+                let best = -Infinity;
+                for (const m of moves) {
+                    const ev = minimax(applyMove(state, m), depth - 1, alpha, beta, false, aiColor, config);
+                    if (ev > best) best = ev;
+                    if (ev > alpha) alpha = ev;
+                    if (beta <= alpha) break;
+                }
+                return best;
+            } else {
+                let best = Infinity;
+                for (const m of moves) {
+                    const ev = minimax(applyMove(state, m), depth - 1, alpha, beta, true, aiColor, config);
+                    if (ev < best) best = ev;
+                    if (ev < beta) beta = ev;
+                    if (beta <= alpha) break;
+                }
+                return best;
+            }
+        }
+
+        function findBestMoveForColor(state, color, config) {
+            const legal = getLegalMoves(state, color);
+            if (legal.length === 0) return null;
+
+            const depth = config.elo < 850 ? 1 : (config.elo < 1550 ? 2 : 3);
+            const ordered = [...legal].sort((a, b) => (b.captured ? ENGINE_VALUES[b.captured.type] : 0) - (a.captured ? ENGINE_VALUES[a.captured.type] : 0));
+
+            const scored = ordered.map(m => {
+                const next = applyMove(state, m);
+                const score = minimax(next, depth - 1, -Infinity, Infinity, false, color, config);
+                return { move: m, score };
+            }).sort((a, b) => b.score - a.score);
+
+            const blunderChance = Math.max(0, (2200 - config.elo) / 2200) * 0.6;
+            if (scored.length > 1 && Math.random() < blunderChance) {
+                const pool = Math.min(scored.length, config.elo < 900 ? 5 : 3);
+                return scored[Math.floor(Math.random() * pool)].move;
+            }
+            return scored[0].move;
+        }
+
+        function pieceFullName(type) {
+            return { P: 'Pawn', N: 'Knight', B: 'Bishop', R: 'Rook', Q: 'Queen', K: 'King' }[type] || 'Piece';
+        }
+
+        function buildDetailedHintData(state, userColor) {
+            const strongConfig = { userColor: userColor === 'w' ? 'b' : 'w', elo: 2000, aggression: 0.55, style: 'Positional' };
+            const bestMove = findBestMoveForColor(state, userColor, strongConfig);
+            if (!bestMove) return null;
+
+            const after = applyMove(state, bestMove);
+            const notation = formatMoveNotation(bestMove, after);
+            const pName = pieceFullName(bestMove.piece.type);
+            const fromSq = sqToAlg(bestMove.from[0], bestMove.from[1]);
+            const toSq = sqToAlg(bestMove.to[0], bestMove.to[1]);
+            const givesCheck = isKingInCheck(after, after.turn);
+            const isCenter = bestMove.to[0] >= 3 && bestMove.to[0] <= 4 && bestMove.to[1] >= 3 && bestMove.to[1] <= 4;
+
+            let principles = [];
+            if (isKingInCheck(state, userColor)) principles.push("King Safety & Escaping Check");
+            if (bestMove.isCastling) principles.push("King Safety & Rook Activation");
+            if (givesCheck) principles.push("Forcing Moves & Initiative");
+            if (bestMove.captured) principles.push("Material Gain & Removing Defenders");
+            if (isCenter) principles.push("Control of the Center");
+            if ((bestMove.piece.type === 'N' || bestMove.piece.type === 'B') && !bestMove.piece.moved) {
+                principles.push("Rapid Piece Development");
+            }
+            if (principles.length === 0) principles.push("Piece Coordination & Activity");
+
+            const level1 =
+                `Hint 1/3 • Key Principle:\nFocus on ${principles.join(' & ')}. Scan the board for a move that improves your most passive piece or creates a direct threat without leaving your King exposed.`;
+
+            const level2 =
+                `Hint 2/3 • Piece & Principles:\nLook at your ${pName} on ${fromSq}. Activating this ${pName} directly applies ${principles.join(' and ')}, improving your overall board harmony.`;
+
+            let detailReason = `Moving your ${pName} from ${fromSq} to ${toSq} (${notation}) is the strongest continuation here.`;
+            if (bestMove.isCastling) {
+                detailReason += ` Castling immediately tucks your King behind a protective pawn shield while bringing your Rook toward the central files.`;
+            } else if (bestMove.captured) {
+                detailReason += ` Capturing the opponent's ${pieceFullName(bestMove.captured.type)} wins clean material and disrupts their coordination.`;
+            } else if (givesCheck) {
+                detailReason += ` Delivering check forces the opponent onto the defensive and gives you tempo to follow up with your remaining pieces.`;
+            } else if (isCenter) {
+                detailReason += ` Occupying ${toSq} anchors your presence in the center, restricting the opponent's mobility and opening lines for your back-rank pieces.`;
+            } else {
+                detailReason += ` It places your ${pName} on a high-mobility square where it controls key diagonals/files and prepares future tactical pressure.`;
+            }
+
+            const level3 = `Hint 3/3 • Best Move (${notation}):\n${detailReason}`;
+
+            return { move: bestMove, level1, level2, level3 };
+        }
+
+        function analyzeUserMoveDetailed(ctx) {
+            const { beforeState, move, afterState, bestMove } = ctx;
+            const userColor = move.piece.color;
+            const playedNotation = formatMoveNotation(move, afterState);
+
+            const strongCfg = { elo: 2000, aggression: 0.55, style: 'Positional' };
+            const playedEval = evaluateStateForColor(afterState, userColor, strongCfg);
+            const bestAfter = bestMove ? applyMove(beforeState, bestMove) : afterState;
+            const bestEval = evaluateStateForColor(bestAfter, userColor, strongCfg);
+            const diff = bestEval - playedEval;
+
+            let quality = "Solid Move";
+            if (diff <= 15) quality = "Excellent Move!";
+            else if (diff <= 65) quality = "Good Move";
+            else if (diff <= 160) quality = "Inaccuracy";
+            else quality = "Mistake / Missed Opportunity";
+
+            const applied = [];
+            if (move.isCastling) applied.push("King Safety");
+            if (move.to[0] >= 3 && move.to[0] <= 4 && move.to[1] >= 3 && move.to[1] <= 4) applied.push("Center Control");
+            if ((move.piece.type === 'N' || move.piece.type === 'B') && !move.piece.moved) applied.push("Piece Development");
+            if (move.captured) applied.push("Material Exchange");
+            if (isKingInCheck(afterState, afterState.turn)) applied.push("Forcing Check");
+            if (applied.length === 0) applied.push("Positional Maneuvering");
+
+            let text = `Move Analysis (${playedNotation}) — ${quality}\n`;
+            text += `• Principles Applied: ${applied.join(', ')}.\n`;
+
+            if (bestMove && (bestMove.from[0] !== move.from[0] || bestMove.from[1] !== move.from[1] || bestMove.to[0] !== move.to[0] || bestMove.to[1] !== move.to[1])) {
+                const bestNot = formatMoveNotation(bestMove, bestAfter);
+                text += `• Stronger Alternative: ${bestNot} (${sqToAlg(bestMove.from[0], bestMove.from[1])} → ${sqToAlg(bestMove.to[0], bestMove.to[1])}). `;
+                text += `Playing ${bestNot} would have maximized your piece activity and board control compared to ${playedNotation}.`;
+                analysisArrow = { from: bestMove.from, to: bestMove.to, color: '#00A88F' };
+                analysisHighlightSq = bestMove.from;
+            } else {
+                text += `• You found the top engine choice! Your move maintains maximum pressure and optimal piece coordination.`;
+                analysisArrow = { from: move.from, to: move.to, color: '#81B64C' };
+                analysisHighlightSq = move.to;
+            }
+
+            return text;
+        }
+
+        function analyzeAiMoveDetailed(ctx) {
+            const { move, afterState } = ctx;
+            const notation = formatMoveNotation(move, afterState);
+            const pName = pieceFullName(move.piece.type);
+            const toSq = sqToAlg(move.to[0], move.to[1]);
+
+            let intent = `Opponent's Move Analysis (${notation}):\n`;
+            intent += `• Style & Personality: ${activeConfig.elo} ELO • ${activeConfig.style} (${Math.round(activeConfig.aggression * 100)}% Aggression).\n`;
+            if (move.captured) {
+                intent += `• Tactical Goal: Captured your ${pieceFullName(move.captured.type)} on ${toSq} to simplify the position or win material.`;
+            } else if (move.isCastling) {
+                intent += `• Strategic Goal: Castled to protect their King and activate their Rook for the middlegame.`;
+            } else if (isKingInCheck(afterState, afterState.turn)) {
+                intent += `• Tactical Goal: Delivered check with their ${pName} to seize the initiative and disrupt your plans.`;
+            } else {
+                intent += `• Strategic Goal: Repositioned their ${pName} to ${toSq} to contest key squares and prepare their next threat. Check which of your pieces are now attacked!`;
+            }
+            return intent;
+        }
+
+        function generateFullBoardAnalysis(state) {
+            let whiteMat = 0, blackMat = 0;
+            let whiteDev = 0, blackDev = 0;
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = state.board[r][c];
+                    if (!p) continue;
+                    if (p.color === 'w') {
+                        whiteMat += PIECE_VALUES[p.type];
+                        if ((p.type === 'N' || p.type === 'B') && r < 7) whiteDev++;
+                    } else {
+                        blackMat += PIECE_VALUES[p.type];
+                        if ((p.type === 'N' || p.type === 'B') && r > 0) blackDev++;
+                    }
+                }
+            }
+
+            const diff = whiteMat - blackMat;
+            const matSummary = diff === 0
+                ? "Material is completely equal."
+                : diff > 0
+                    ? `White leads in material by +${diff} points.`
+                    : `Black leads in material by +${Math.abs(diff)} points.`;
+
+            const turnName = state.turn === 'w' ? 'White' : 'Black';
+            const inCheck = isKingInCheck(state, state.turn);
+            const bestForTurn = findBestMoveForColor(state, state.turn, { elo: 2000, aggression: 0.55, style: 'Positional' });
+            const bestNot = bestForTurn ? formatMoveNotation(bestForTurn, applyMove(state, bestForTurn)) : 'None';
+
+            return `Full Board Evaluation (${turnName} to move):\n` +
+                `• Material Balance: ${matSummary}\n` +
+                `• Development: White has ${whiteDev}/4 minor pieces developed; Black has ${blackDev}/4.\n` +
+                `• King Safety: ${inCheck ? `${turnName}'s King is currently IN CHECK!` : 'Both Kings are safe from immediate check.'}\n` +
+                `• Recommended Plan: Best continuation for ${turnName} is ${bestNot}.`;
+        }
+
+        // =====================================================================
+        // 5. COACH FEEDBACK PANEL, OVERLAY TRANSPARENCY & HINT PIPS
+        // =====================================================================
+        function setCoachFeedback(title, message, autoExpand = false) {
+            const titleEl = document.getElementById('coachTitle');
+            const msgEl = document.getElementById('coachMessage');
+            const scrollEl = document.getElementById('coachMessageScroll');
+            const expandBtn = document.getElementById('coachExpandBtn');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            const needsExpand = message.length > 135 || message.includes('\n');
+            if (needsExpand) {
+                expandBtn.classList.remove('hidden');
+            } else {
+                expandBtn.classList.add('hidden');
+                if (isCoachExpanded) toggleCoachExpand(false);
+            }
+
+            if (autoExpand && needsExpand) {
+                toggleCoachExpand(true);
+            }
+            scrollEl.scrollTop = 0;
+        }
+
+        function toggleCoachExpand(forceState) {
+            isCoachExpanded = typeof forceState === 'boolean' ? forceState : !isCoachExpanded;
+            const card = document.getElementById('coachCard');
+            const scrollEl = document.getElementById('coachMessageScroll');
+            const expandBtn = document.getElementById('coachExpandBtn');
+            const sliderBar = document.getElementById('overlaySliderBar');
+
+            if (isCoachExpanded) {
+                card.style.position = 'absolute';
+                card.style.left = '0';
+                card.style.right = '0';
+                card.style.top = '0';
+                card.style.backgroundColor = `rgba(49, 46, 43, ${coachOverlayOpacity})`;
+                scrollEl.style.maxHeight = '235px';
+                expandBtn.textContent = 'Collapse';
+                sliderBar.classList.remove('hidden');
+            } else {
+                card.style.position = 'relative';
+                card.style.backgroundColor = 'rgba(49, 46, 43, 0.96)';
+                scrollEl.style.maxHeight = '78px';
+                expandBtn.textContent = 'Expand';
+                sliderBar.classList.add('hidden');
+                if (analysisArrow || analysisHighlightSq) {
+                    analysisArrow = null;
+                    analysisHighlightSq = null;
+                    renderBoard();
+                }
+            }
+        }
+
+        function updateHintPips() {
+            const p1 = document.getElementById('hintPip1');
+            const p2 = document.getElementById('hintPip2');
+            const p3 = document.getElementById('hintPip3');
+            p1.style.backgroundColor = hintLevel >= 1 ? '#F5F682' : 'rgba(255,255,255,0.2)';
+            p2.style.backgroundColor = hintLevel >= 2 ? '#B9CA43' : 'rgba(255,255,255,0.2)';
+            p3.style.backgroundColor = hintLevel >= 3 ? '#81B64C' : 'rgba(255,255,255,0.2)';
+        }
+
+        function resetHintState() {
+            hintLevel = 0;
+            cachedHintData = null;
+            analysisArrow = null;
+            analysisHighlightSq = null;
+            updateHintPips();
+        }
+
+        // =====================================================================
+        // 6. CAPTURED PIECES & MATERIAL ADVANTAGE STRIP
+        // =====================================================================
+        function renderCapturedPieces(state) {
+            const startCounts = { P: 8, N: 2, B: 2, R: 2, Q: 1 };
+            const current = { w: { P: 0, N: 0, B: 0, R: 0, Q: 0 }, b: { P: 0, N: 0, B: 0, R: 0, Q: 0 } };
+
+            let wMat = 0, bMat = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = state.board[r][c];
+                    if (p && p.type !== 'K') {
+                        current[p.color][p.type]++;
+                        if (p.color === 'w') wMat += PIECE_VALUES[p.type];
+                        else bMat += PIECE_VALUES[p.type];
+                    }
+                }
+            }
+
+            const order = ['Q', 'R', 'B', 'N', 'P'];
+            let capturedBlackHtml = ''; // Black pieces captured by White
+            let capturedWhiteHtml = ''; // White pieces captured by Black
+
+            for (const t of order) {
+                const missingB = Math.max(0, startCounts[t] - current.b[t]);
+                for (let i = 0; i < missingB; i++) capturedBlackHtml += getMiniCapturedIcon('b', t);
+
+                const missingW = Math.max(0, startCounts[t] - current.w[t]);
+                for (let i = 0; i < missingW; i++) capturedWhiteHtml += getMiniCapturedIcon('w', t);
+            }
+
+            const diff = wMat - bMat;
+            if (diff > 0) {
+                capturedBlackHtml += `<span class="ml-1.5 text-[11px] font-bold text-[#B0AFAF]">+${diff}</span>`;
+            } else if (diff < 0) {
+                capturedWhiteHtml += `<span class="ml-1.5 text-[11px] font-bold text-[#B0AFAF]">+${Math.abs(diff)}</span>`;
+            }
+
+            document.getElementById('capturedByBlackRow').innerHTML = capturedBlackHtml || '<span class="text-[10px] text-[#6E6C69]">—</span>';
+            document.getElementById('capturedByWhiteRow').innerHTML = capturedWhiteHtml || '<span class="text-[10px] text-[#6E6C69]">—</span>';
+        }
+
+        // =====================================================================
+        // 7. MOVE HISTORY & BOARD RENDERER
+        // =====================================================================
+        function renderMoveHistory() {
+            const listEl = document.getElementById('moveHistoryList');
+            const prevBtn = document.getElementById('prevMoveBtn');
+            const nextBtn = document.getElementById('nextMoveBtn');
+
+            prevBtn.disabled = viewIndex <= 0;
+            nextBtn.disabled = viewIndex >= timeline.length - 1;
+
+            if (timeline.length <= 1) {
+                listEl.innerHTML = `<span class="text-[#8E8C89] italic text-[11px]">No moves yet</span>`;
+                return;
+            }
+
+            let html = '';
+            for (let i = 1; i < timeline.length; i++) {
+                const entry = timeline[i];
+                if (i % 2 === 1) {
+                    const moveNum = Math.ceil(i / 2);
+                    html += `<span class="text-[#8E8C89] font-semibold ml-1">${moveNum}.</span>`;
+                }
+                const activeClass = i === viewIndex
+                    ? 'bg-[#81B64C] text-white font-bold'
+                    : 'bg-[#262421] text-[#D4D2CF] hover:bg-[#3C3936]';
+                html += `<button type="button" data-idx="${i}" class="history-pill px-1.5 py-0.5 rounded ${activeClass} whitespace-nowrap cursor-pointer">${entry.notation}</button>`;
+            }
+            listEl.innerHTML = html;
+
+            listEl.querySelectorAll('.history-pill').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                    jumpToHistoryIndex(idx);
+                });
+            });
+
+            const activePill = listEl.querySelector('.bg-\\[\\#81B64C\\]');
+            if (activePill) {
+                activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+
+        function jumpToHistoryIndex(idx) {
+            if (idx < 0 || idx >= timeline.length) return;
+            viewIndex = idx;
+            selectedSquare = null;
+            legalMovesForSelected = [];
+            resetHintState();
+            renderBoard();
+        }
+
+        function drawBoardArrow(arrow, flipped) {
+            const svg = document.getElementById('boardArrowOverlay');
+            if (!arrow) {
+                svg.innerHTML = '';
+                return;
+            }
+            const [fr, fc] = arrow.from;
+            const [tr, tc] = arrow.to;
+            const dFromR = flipped ? 7 - fr : fr;
+            const dFromC = flipped ? 7 - fc : fc;
+            const dToR = flipped ? 7 - tr : tr;
+            const dToC = flipped ? 7 - tc : tc;
+
+            const x1 = dFromC * 100 + 50;
+            const y1 = dFromR * 100 + 50;
+            const x2 = dToC * 100 + 50;
+            const y2 = dToR * 100 + 50;
+
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const len = Math.hypot(dx, dy);
+            if (len < 1) {
+                svg.innerHTML = '';
+                return;
+            }
+            const ux = dx / len;
+            const uy = dy / len;
+
+            const startX = x1 + ux * 18;
+            const startY = y1 + uy * 18;
+            const tipX = x2 - ux * 10;
+            const tipY = y2 - uy * 10;
+            const neckX = tipX - ux * 36;
+            const neckY = tipY - uy * 36;
+
+            const px = -uy;
+            const py = ux;
+            const col = arrow.color || '#81B64C';
+
+            svg.innerHTML = `
+                <line x1="${startX}" y1="${startY}" x2="${neckX}" y2="${neckY}"
+                    stroke="${col}" stroke-width="22" stroke-linecap="round" opacity="0.92" />
+                <polygon points="${tipX},${tipY} ${neckX + px * 26},${neckY + py * 26} ${neckX - px * 26},${neckY - py * 26}"
+                    fill="${col}" opacity="0.95" />
+            `;
+        }
+
+        function renderBoard() {
+            const currentEntry = timeline[viewIndex];
+            const state = currentEntry.state;
+            const flipped = activeConfig.userColor === 'b';
+            const grid = document.getElementById('chessBoardGrid');
+            const legalSet = new Set(legalMovesForSelected.map(m => `${m.to[0]},${m.to[1]}`));
+
+            let html = '';
+            for (let dRow = 0; dRow < 8; dRow++) {
+                const r = flipped ? 7 - dRow : dRow;
+                for (let dCol = 0; dCol < 8; dCol++) {
+                    const c = flipped ? 7 - dCol : dCol;
+                    const isLight = (r + c) % 2 === 0;
+                    const piece = state.board[r][c];
+
+                    const isSelected = selectedSquare && selectedSquare[0] === r && selectedSquare[1] === c;
+                    const isLastFrom = state.lastMove && state.lastMove.from[0] === r && state.lastMove.from[1] === c;
+                    const isLastTo = state.lastMove && state.lastMove.to[0] === r && state.lastMove.to[1] === c;
+                    const isHintPieceSq = (hintLevel >= 2 && cachedHintData && cachedHintData.move.from[0] === r && cachedHintData.move.from[1] === c) ||
+                                          (analysisHighlightSq && analysisHighlightSq[0] === r && analysisHighlightSq[1] === c);
+
+                    let bg = isLight ? '#EBECD0' : '#739552';
+                    if (isHintPieceSq) {
+                        bg = '#00A88F';
+                    } else if (isSelected || isLastFrom || isLastTo) {
+                        bg = isLight ? '#F5F682' : '#B9CA43';
+                    }
+
+                    const coordColor = isLight ? '#739552' : '#EBECD0';
+                    const isLegalDest = legalSet.has(`${r},${c}`);
+                    const pulseClass = (aiMovePulseActive && isLastTo) ? 'ai-pulse' : '';
+
+                    html += `<div data-r="${r}" data-c="${c}" style="background-color:${bg};"
+                        class="board-sq relative w-full h-full flex items-center justify-center cursor-pointer ${pulseClass}">`;
+
+                    if (dCol === 0) {
+                        html += `<span style="color:${coordColor};" class="absolute top-0.5 left-1 text-[10px] font-extrabold leading-none pointer-events-none">${8 - r}</span>`;
+                    }
+                    if (dRow === 7) {
+                        html += `<span style="color:${coordColor};" class="absolute bottom-0.5 right-1 text-[10px] font-extrabold leading-none pointer-events-none">${String.fromCharCode(97 + c)}</span>`;
+                    }
+
+                    if (piece) {
+                        html += `<div class="w-[84%] h-[84%] flex items-center justify-center pointer-events-none">${getPieceSVG(piece.color, piece.type)}</div>`;
+                    }
+
+                    // Semitransparent grey circle indicator on all legal destinations
+                    if (isLegalDest) {
+                        html += `<div class="absolute w-[32%] h-[32%] rounded-full bg-neutral-600/55 pointer-events-none z-10"></div>`;
+                    }
+
+                    html += `</div>`;
+                }
+            }
+
+            grid.innerHTML = html;
+
+            // Attach click handlers to squares
+            grid.querySelectorAll('.board-sq').forEach(sqEl => {
+                sqEl.addEventListener('click', () => {
+                    const r = parseInt(sqEl.getAttribute('data-r'), 10);
+                    const c = parseInt(sqEl.getAttribute('data-c'), 10);
+                    handleSquareTap(r, c);
+                });
+            });
+
+            // Arrow overlay
+            if (hintLevel >= 3 && cachedHintData) {
+                drawBoardArrow({ from: cachedHintData.move.from, to: cachedHintData.move.to, color: '#81B64C' }, flipped);
+            } else if (analysisArrow) {
+                drawBoardArrow(analysisArrow, flipped);
+            } else {
+                drawBoardArrow(null, flipped);
+            }
+
+            renderCapturedPieces(state);
+            renderMoveHistory();
+        }
+
+        // =====================================================================
+        // 8. GAME FLOW & INTERACTION HANDLERS
+        // =====================================================================
+        function handleSquareTap(r, c) {
+            if (isAiThinking) return;
+            const currentEntry = timeline[viewIndex];
+            const state = currentEntry.state;
+
+            // Clear any active Analyze Move arrow/highlight indicators when tapping anywhere on the board
+            let clearedAnalysis = false;
+            if (analysisArrow || analysisHighlightSq) {
+                analysisArrow = null;
+                analysisHighlightSq = null;
+                clearedAnalysis = true;
+            }
+
+            // If user taps the opponent's recently moved piece, show analysis of opponent's move
+            if (state.lastMove && state.lastMove.to[0] === r && state.lastMove.to[1] === c &&
+                state.lastMove.piece.color !== activeConfig.userColor && lastAiMoveContext) {
+                setCoachFeedback("Opponent Move Breakdown", analyzeAiMoveDetailed(lastAiMoveContext), true);
+                if (clearedAnalysis) renderBoard();
+                return;
+            }
+
+            // Only allow playing from the latest board state when it's user's turn
+            if (viewIndex !== timeline.length - 1 || state.turn !== activeConfig.userColor) {
+                if (clearedAnalysis) renderBoard();
+                return;
+            }
+
+            // Check if tapped square is a legal destination for selected piece
+            const chosenMove = legalMovesForSelected.find(m => m.to[0] === r && m.to[1] === c);
+            if (chosenMove) {
+                executeUserMove(chosenMove);
+                return;
+            }
+
+            // Otherwise select user's piece
+            const tappedPiece = state.board[r][c];
+            if (tappedPiece && tappedPiece.color === activeConfig.userColor) {
+                selectedSquare = [r, c];
+                legalMovesForSelected = getLegalMoves(state, activeConfig.userColor)
+                    .filter(m => m.from[0] === r && m.from[1] === c);
+            } else {
+                selectedSquare = null;
+                legalMovesForSelected = [];
+            }
+            renderBoard();
+        }
+
+        function executeUserMove(move) {
+            const beforeState = timeline[timeline.length - 1].state;
+            const bestMoveForUser = findBestMoveForColor(beforeState, activeConfig.userColor, { elo: 2000, aggression: 0.55, style: 'Positional' });
+            const afterState = applyMove(beforeState, move);
+            const notation = formatMoveNotation(move, afterState);
+
+            lastUserMoveContext = {
+                beforeState,
+                move,
+                afterState,
+                bestMove: bestMoveForUser
+            };
+
+            timeline.push({ state: afterState, move, notation });
+            viewIndex = timeline.length - 1;
+            selectedSquare = null;
+            legalMovesForSelected = [];
+            resetHintState();
+            renderBoard();
+
+            // Check game end
+            const oppMoves = getLegalMoves(afterState, afterState.turn);
+            if (oppMoves.length === 0) {
+                const msg = isKingInCheck(afterState, afterState.turn)
+                    ? `Checkmate! You won with ${notation}!`
+                    : `Game drawn by Stalemate.`;
+                setCoachFeedback("Game Over", msg, false);
+                return;
+            }
+
+            triggerAiTurn();
+        }
+
+        function triggerAiTurn() {
+            isAiThinking = true;
+            setCoachFeedback("Coach Feedback", "Opponent is thinking...", false);
+
+            setTimeout(() => {
+                const currentState = timeline[timeline.length - 1].state;
+                const aiColor = activeConfig.userColor === 'w' ? 'b' : 'w';
+                const aiMove = findBestMoveForColor(currentState, aiColor, activeConfig);
+
+                if (aiMove) {
+                    const afterAi = applyMove(currentState, aiMove);
+                    const notation = formatMoveNotation(aiMove, afterAi);
+
+                    lastAiMoveContext = {
+                        beforeState: currentState,
+                        move: aiMove,
+                        afterState: afterAi
+                    };
+
+                    timeline.push({ state: afterAi, move: aiMove, notation });
+                    viewIndex = timeline.length - 1;
+
+                    // Trigger brief pulse highlight on moved piece and Analyze Move button
+                    aiMovePulseActive = true;
+                    const analyzeBtn = document.getElementById('analyzeMoveBtn');
+                    analyzeBtn.classList.add('ai-pulse', 'border-[#F5F682]');
+                    if (aiPulseTimer) clearTimeout(aiPulseTimer);
+                    aiPulseTimer = setTimeout(() => {
+                        aiMovePulseActive = false;
+                        analyzeBtn.classList.remove('ai-pulse', 'border-[#F5F682]');
+                        renderBoard();
+                    }, 3200);
+
+                    const userLegal = getLegalMoves(afterAi, activeConfig.userColor);
+                    if (userLegal.length === 0) {
+                        const endMsg = isKingInCheck(afterAi, activeConfig.userColor)
+                            ? `Checkmate! Opponent won with ${notation}.`
+                            : `Draw by Stalemate after ${notation}.`;
+                        setCoachFeedback("Game Over", endMsg, false);
+                    } else {
+                        setCoachFeedback(
+                            "Coach Feedback",
+                            `Opponent played ${notation}. Tap their moved piece to inspect their plan, or press Analyze Move to review your last move.`,
+                            false
+                        );
+                    }
+                }
+
+                isAiThinking = false;
+                renderBoard();
+            }, 320);
+        }
+
+        function startNewGame() {
+            activeConfig = { ...setupConfig };
+            document.getElementById('headerSubtitle').textContent =
+                `Opponent: ${activeConfig.elo} ELO • ${activeConfig.style} (${Math.round(activeConfig.aggression * 100)}% Aggr.)`;
+
+            const initial = createInitialState();
+            timeline = [{ state: initial, move: null, notation: 'Start' }];
+            viewIndex = 0;
+            selectedSquare = null;
+            legalMovesForSelected = [];
+            lastUserMoveContext = null;
+            lastAiMoveContext = null;
+            isAiThinking = false;
+            resetHintState();
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+
+            if (activeConfig.userColor === 'w') {
+                setCoachFeedback("Coach Feedback", "Match started! You play White. Tap a piece to see legal moves.", false);
+                renderBoard();
+            } else {
+                renderBoard();
+                triggerAiTurn();
+            }
+        }
+
+        // =====================================================================
+        // 9. EVENT LISTENERS BINDING (Runs after DOM is ready)
+        // =====================================================================
+        function initApp() {
+            const setupWhiteBtn = document.getElementById('setupWhiteBtn');
+            const setupBlackBtn = document.getElementById('setupBlackBtn');
+            const setupEloSlider = document.getElementById('setupEloSlider');
+            const setupEloLabel = document.getElementById('setupEloLabel');
+            const setupAggrSlider = document.getElementById('setupAggrSlider');
+            const setupAggrLabel = document.getElementById('setupAggrLabel');
+            const styleButtons = document.querySelectorAll('.style-choice-btn');
+            const setupStyleDesc = document.getElementById('setupStyleDesc');
+            const startMatchBtn = document.getElementById('startMatchBtn');
+
+            function refreshColorButtons() {
+                if (setupConfig.userColor === 'w') {
+                    setupWhiteBtn.className = "py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white";
+                    setupBlackBtn.className = "py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]";
+                } else {
+                    setupBlackBtn.className = "py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white";
+                    setupWhiteBtn.className = "py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]";
+                }
+            }
+
+            setupWhiteBtn.addEventListener('click', () => {
+                setupConfig.userColor = 'w';
+                refreshColorButtons();
+            });
+
+            setupBlackBtn.addEventListener('click', () => {
+                setupConfig.userColor = 'b';
+                refreshColorButtons();
+            });
+
+            setupEloSlider.addEventListener('input', () => {
+                setupConfig.elo = parseInt(setupEloSlider.value, 10);
+                setupEloLabel.textContent = `${setupConfig.elo} ELO`;
+            });
+
+            setupAggrSlider.addEventListener('input', () => {
+                const pct = parseInt(setupAggrSlider.value, 10);
+                setupConfig.aggression = pct / 100;
+                const tag = pct < 30 ? 'Defensive' : (pct > 70 ? 'Aggressive' : 'Balanced');
+                setupAggrLabel.textContent = `${pct}% (${tag})`;
+            });
+
+            styleButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const chosenStyle = btn.getAttribute('data-style');
+                    setupConfig.style = chosenStyle;
+                    styleButtons.forEach(b => {
+                        if (b.getAttribute('data-style') === chosenStyle) {
+                            b.className = "style-choice-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white";
+                        } else {
+                            b.className = "style-choice-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]";
+                        }
+                    });
+                    setupStyleDesc.textContent = STYLE_DESCRIPTIONS[chosenStyle] || '';
+                });
+            });
+
+            startMatchBtn.addEventListener('click', () => {
+                startNewGame();
+            });
+
+            // In-Game Top Bar & Coach Controls
+            document.getElementById('openNewGameBtn').addEventListener('click', () => {
+                if (isCoachExpanded) toggleCoachExpand(false);
+                document.getElementById('gameScreen').classList.add('hidden');
+                document.getElementById('startScreen').classList.remove('hidden');
+            });
+
+            document.getElementById('coachBlurToggleBtn').addEventListener('click', () => {
+                isCoachTextBlurred = !isCoachTextBlurred;
+                const textContainer = document.getElementById('coachTextContainer');
+                const blurBtn = document.getElementById('coachBlurToggleBtn');
+                if (isCoachTextBlurred) {
+                    textContainer.classList.add('blur-[6px]');
+                    blurBtn.classList.add('ring-2', 'ring-[#F5F682]', 'opacity-80');
+                } else {
+                    textContainer.classList.remove('blur-[6px]');
+                    blurBtn.classList.remove('ring-2', 'ring-[#F5F682]', 'opacity-80');
+                }
+            });
+
+            document.getElementById('coachExpandBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleCoachExpand();
+            });
+
+            document.getElementById('coachTextContainer').addEventListener('click', () => {
+                const expandBtn = document.getElementById('coachExpandBtn');
+                if (!expandBtn.classList.contains('hidden')) {
+                    toggleCoachExpand();
+                }
+            });
+
+            document.getElementById('coachOpacitySlider').addEventListener('input', (e) => {
+                coachOverlayOpacity = parseInt(e.target.value, 10) / 100;
+                if (isCoachExpanded) {
+                    document.getElementById('coachCard').style.backgroundColor = `rgba(49, 46, 43, ${coachOverlayOpacity})`;
+                }
+            });
+
+            // Sequential History Navigation
+            document.getElementById('prevMoveBtn').addEventListener('click', () => {
+                if (viewIndex > 0) jumpToHistoryIndex(viewIndex - 1);
+            });
+
+            document.getElementById('nextMoveBtn').addEventListener('click', () => {
+                if (viewIndex < timeline.length - 1) jumpToHistoryIndex(viewIndex + 1);
+            });
+
+            // 3-Stage Progressive Hint Button
+            document.getElementById('hintBtn').addEventListener('click', () => {
+                if (isAiThinking) return;
+                const currentState = timeline[viewIndex].state;
+                if (currentState.turn !== activeConfig.userColor) {
+                    setCoachFeedback("Hint", "Step forward to your turn first to request a move hint.", false);
+                    return;
+                }
+
+                if (!cachedHintData) {
+                    cachedHintData = buildDetailedHintData(currentState, activeConfig.userColor);
+                }
+                if (!cachedHintData) return;
+
+                hintLevel = (hintLevel % 3) + 1;
+                updateHintPips();
+
+                if (hintLevel === 1) {
+                    setCoachFeedback("Hint 1/3 • Chess Principle", cachedHintData.level1, false);
+                } else if (hintLevel === 2) {
+                    setCoachFeedback("Hint 2/3 • Piece & Principles", cachedHintData.level2, false);
+                } else {
+                    setCoachFeedback("Hint 3/3 • Best Move", cachedHintData.level3, true);
+                }
+                renderBoard();
+            });
+
+            // Analyze Move Button
+            document.getElementById('analyzeMoveBtn').addEventListener('click', () => {
+                if (!lastUserMoveContext) {
+                    setCoachFeedback("Analyze Move", "Make your first move on the board, then tap Analyze Move for a full breakdown!", false);
+                    return;
+                }
+                resetHintState();
+                const report = analyzeUserMoveDetailed(lastUserMoveContext);
+                setCoachFeedback("Your Move Analysis", report, true);
+                renderBoard();
+            });
+
+            // Analyze Board Button
+            document.getElementById('analyzeBoardBtn').addEventListener('click', () => {
+                resetHintState();
+                const currentState = timeline[viewIndex].state;
+                const report = generateFullBoardAnalysis(currentState);
+                setCoachFeedback("Board Evaluation", report, true);
+                renderBoard();
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    })();
+    </script>
+</body>
+</html>
