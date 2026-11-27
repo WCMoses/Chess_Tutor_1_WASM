@@ -162,38 +162,44 @@
     <!-- ===================================================================== -->
     <!-- 2. ACTIVE GAME SCREEN                                                 -->
     <!-- ===================================================================== -->
-    <div id="gameScreen" class="hidden w-full max-w-[480px] min-h-[100dvh] px-2.5 pt-2 pb-3 flex flex-col justify-between">
+    <div id="gameScreen" class="hidden w-full max-w-[480px] h-[100dvh] max-h-[100dvh] px-2.5 pt-1.5 pb-2 flex flex-col justify-between overflow-hidden">
 
-        <!-- Top Compact Bar: Title + Small New Game Button -->
-        <div class="flex items-center justify-between gap-2 mb-1.5">
+        <!-- Top Compact Bar: Title + Fullscreen + Small New Game Button -->
+        <div class="flex items-center justify-between gap-2 mb-1">
             <div class="min-w-0">
-                <h1 class="text-base font-extrabold text-white leading-tight truncate">Chess Tutor AI</h1>
-                <p id="headerSubtitle" class="text-[11px] text-[#A8A6A3] truncate">
+                <h1 class="text-sm font-extrabold text-white leading-tight truncate">Chess Tutor AI</h1>
+                <p id="headerSubtitle" class="text-[10px] text-[#A8A6A3] truncate">
                     Opponent: 800 ELO • Positional (50% Aggr.)
                 </p>
             </div>
-            <button type="button" id="openNewGameBtn"
-                class="shrink-0 px-2.5 py-1.5 rounded-lg bg-[#3C3936] hover:bg-[#4A4642] active:scale-95 text-white text-xs font-bold border border-white/10 transition cursor-pointer">
-                New Game
-            </button>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" id="fullscreenBtn" title="Toggle Fullscreen"
+                    class="px-2 py-1 rounded-lg bg-[#3C3936] hover:bg-[#4A4642] active:scale-95 text-white text-xs font-bold border border-white/10 transition cursor-pointer">
+                    ⛶
+                </button>
+                <button type="button" id="openNewGameBtn"
+                    class="px-2.5 py-1 rounded-lg bg-[#3C3936] hover:bg-[#4A4642] active:scale-95 text-white text-xs font-bold border border-white/10 transition cursor-pointer">
+                    New Game
+                </button>
+            </div>
         </div>
 
-        <!-- Coach Feedback Panel (Generous default height; expands transparently over board) -->
-        <div class="relative z-30 mb-1.5">
+        <!-- Coach Feedback Panel (Compact default height; expands transparently over board) -->
+        <div class="relative z-30 mb-1">
             <div id="coachCard"
                 style="background-color: rgba(49, 46, 43, 0.96);"
-                class="rounded-xl p-2.5 border border-white/10 shadow-md transition-all duration-200">
-                <div class="flex items-start gap-2.5">
+                class="rounded-xl p-2 border border-white/10 shadow-md transition-all duration-200">
+                <div class="flex items-start gap-2">
                     <!-- Graduation Cap Blur Toggle Button -->
                     <button type="button" id="coachBlurToggleBtn" title="Toggle blur on Coach text"
-                        class="shrink-0 w-9 h-9 rounded-lg bg-[#81B64C] hover:bg-[#73a442] active:scale-95 flex items-center justify-center text-lg shadow transition cursor-pointer">
+                        class="shrink-0 w-8 h-8 rounded-lg bg-[#81B64C] hover:bg-[#73a442] active:scale-95 flex items-center justify-center text-base shadow transition cursor-pointer">
                         🎓
                     </button>
 
                     <!-- Feedback Text Area -->
                     <div id="coachTextContainer" class="flex-1 min-w-0 transition duration-200 cursor-pointer">
                         <div class="flex items-center justify-between gap-2 mb-0.5">
-                            <span id="coachTitle" class="text-[11px] font-extrabold uppercase tracking-wider text-[#81B64C]">
+                            <span id="coachTitle" class="text-[10px] font-extrabold uppercase tracking-wider text-[#81B64C]">
                                 Coach Feedback
                             </span>
                             <button type="button" id="coachExpandBtn"
@@ -201,8 +207,8 @@
                                 Expand
                             </button>
                         </div>
-                        <div id="coachMessageScroll" class="max-h-[78px] overflow-y-auto pr-1">
-                            <p id="coachMessage" class="text-xs text-[#EFEFEF] leading-relaxed whitespace-pre-line">
+                        <div id="coachMessageScroll" class="max-h-[58px] overflow-y-auto pr-1">
+                            <p id="coachMessage" class="text-xs text-[#EFEFEF] leading-snug whitespace-pre-line">
                                 Tap any piece to see legal moves, or use Hint for principle-based coaching.
                             </p>
                         </div>
@@ -211,55 +217,55 @@
             </div>
         </div>
 
-        <!-- Bottom-Anchored Board & Controls Stack (Pushes board downward for larger text space) -->
-        <div class="mt-auto flex flex-col">
+        <!-- Bottom-Anchored Board & Controls Stack -->
+        <div class="mt-auto flex flex-col min-h-0">
 
             <!-- Transparency Slider (Visible when Coach text is expanded over board) -->
-            <div id="overlaySliderBar" class="hidden mb-1.5 px-2.5 py-1.5 rounded-lg bg-[#312E2B] border border-white/10 flex items-center gap-2">
+            <div id="overlaySliderBar" class="hidden mb-1 px-2.5 py-1 rounded-lg bg-[#312E2B] border border-white/10 flex items-center gap-2">
                 <span class="text-[10px] font-bold text-[#B0AFAF] whitespace-nowrap">Board</span>
                 <input id="coachOpacitySlider" type="range" min="15" max="98" step="1" value="85" class="flex-1 opacity-slider" />
                 <span class="text-[10px] font-bold text-[#B0AFAF] whitespace-nowrap">Text</span>
             </div>
 
-            <!-- Interactive Chess Board Container -->
-            <div class="relative w-full aspect-square rounded-md overflow-hidden shadow-2xl border border-black/40">
+            <!-- Interactive Chess Board Container (Auto-scales width so bottom controls always fit on screen) -->
+            <div class="relative w-full max-w-[min(100%,calc(100dvh-235px))] mx-auto aspect-square rounded-md overflow-hidden shadow-2xl border border-black/40">
                 <div id="chessBoardGrid" class="w-full h-full grid grid-cols-8 grid-rows-8"></div>
                 <!-- SVG Arrow Overlay for Hint 3/3 and Move Analysis -->
                 <svg id="boardArrowOverlay" viewBox="0 0 800 800" class="pointer-events-none absolute inset-0 w-full h-full z-20"></svg>
             </div>
 
             <!-- Captured Pieces & Material Advantage Strip -->
-            <div class="mt-1.5 px-2 py-1 rounded-lg bg-[#2D2A27] border border-white/5 flex items-center justify-between min-h-[28px]">
+            <div class="mt-1 px-2 py-0.5 rounded-lg bg-[#2D2A27] border border-white/5 flex items-center justify-between min-h-[24px]">
                 <div id="capturedByBlackRow" class="flex items-center gap-0.5 text-xs"></div>
                 <div id="capturedByWhiteRow" class="flex items-center gap-0.5 text-xs"></div>
             </div>
 
             <!-- Sequential Forward / Back Move History Bar -->
-            <div class="mt-1.5 px-1.5 py-1 rounded-lg bg-[#312E2B] border border-white/5 flex items-center gap-1.5">
+            <div class="mt-1 px-1.5 py-0.5 rounded-lg bg-[#312E2B] border border-white/5 flex items-center gap-1.5">
                 <button type="button" id="prevMoveBtn" title="Step Back"
-                    class="w-8 h-8 rounded-md bg-[#262421] hover:bg-[#3C3936] disabled:opacity-35 flex items-center justify-center text-white font-bold text-sm transition cursor-pointer">
+                    class="w-7 h-7 rounded-md bg-[#262421] hover:bg-[#3C3936] disabled:opacity-35 flex items-center justify-center text-white font-bold text-sm transition cursor-pointer">
                     ‹
                 </button>
                 <div id="moveHistoryList" class="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar text-xs px-1">
                     <span class="text-[#8E8C89] italic text-[11px]">No moves yet</span>
                 </div>
                 <button type="button" id="nextMoveBtn" title="Step Forward"
-                    class="w-8 h-8 rounded-md bg-[#262421] hover:bg-[#3C3936] disabled:opacity-35 flex items-center justify-center text-white font-bold text-sm transition cursor-pointer">
+                    class="w-7 h-7 rounded-md bg-[#262421] hover:bg-[#3C3936] disabled:opacity-35 flex items-center justify-center text-white font-bold text-sm transition cursor-pointer">
                     ›
                 </button>
                 <button type="button" id="expandHistoryBtn" title="Full History &amp; Game Settings"
-                    class="w-8 h-8 rounded-md bg-[#262421] hover:bg-[#3C3936] active:scale-95 flex items-center justify-center text-[#81B64C] font-extrabold text-base border border-white/10 transition cursor-pointer">
+                    class="w-7 h-7 rounded-md bg-[#262421] hover:bg-[#3C3936] active:scale-95 flex items-center justify-center text-[#81B64C] font-extrabold text-base border border-white/10 transition cursor-pointer">
                     +
                 </button>
             </div>
 
             <!-- Expandable Full History & Game Settings Drawer -->
-            <div id="expandedHistoryPanel" class="hidden mt-1.5 p-3 rounded-xl bg-[#312E2B] border border-white/10 shadow-lg space-y-2.5">
+            <div id="expandedHistoryPanel" class="hidden mt-1 p-2.5 rounded-xl bg-[#312E2B] border border-white/10 shadow-lg space-y-2">
                 <div class="flex items-center justify-between border-b border-white/10 pb-1.5">
                     <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#81B64C]">Match Settings &amp; Full Move History</span>
-                    <button type="button" id="closeHistoryPanelBtn" class="text-xs font-bold text-[#B0AFAF] hover:text-white px-1.5 py-0.5 rounded bg-[#262421] cursor-pointer">✕</button>
+                    <button type="button" id="closeHistoryPanelBtn" class="px-2 py-0.5 rounded bg-[#262421] text-[#B0AFAF] hover:text-white text-xs font-bold cursor-pointer">✕</button>
                 </div>
-                <div id="expandedSettingsSummary" class="grid grid-cols-2 gap-1.5 text-[11px] bg-[#262421] p-2 rounded-lg text-[#D4D2CF]"></div>
+                <div id="expandedGameSettingsSummary" class="grid grid-cols-2 gap-1.5 text-[11px] text-[#CCCCCC] bg-[#262421] p-2 rounded-lg"></div>
                 <div>
                     <div class="text-[10px] font-bold uppercase tracking-wider text-[#8E8C89] mb-1">Full Move List (Tap to Jump)</div>
                     <div id="fullMoveHistoryGrid" class="max-h-32 overflow-y-auto grid grid-cols-2 gap-1 text-xs pr-1"></div>
@@ -267,28 +273,28 @@
             </div>
 
             <!-- Bottom 3-Button Action Bar: Hint | Analyze Move | Analyze Board -->
-            <div class="mt-1.5 grid grid-cols-3 gap-2">
+            <div class="mt-1 grid grid-cols-3 gap-1.5">
                 <!-- 3-Stage Progressive Hint Button -->
                 <button type="button" id="hintBtn"
-                    class="py-2 px-2 rounded-xl bg-[#312E2B] hover:bg-[#3C3936] active:scale-[0.98] border border-white/10 flex flex-col items-center justify-center gap-1 transition cursor-pointer">
+                    class="py-1.5 px-2 rounded-xl bg-[#312E2B] hover:bg-[#3C3936] active:scale-[0.98] border border-white/10 flex flex-col items-center justify-center gap-1 transition cursor-pointer">
                     <span class="text-xs font-extrabold text-[#F5F682]">💡 Hint</span>
                     <div class="flex items-center gap-1 w-full px-2">
-                        <span id="hintPip1" class="h-1.5 flex-1 rounded-full bg-white/20 transition-colors"></span>
-                        <span id="hintPip2" class="h-1.5 flex-1 rounded-full bg-white/20 transition-colors"></span>
-                        <span id="hintPip3" class="h-1.5 flex-1 rounded-full bg-white/20 transition-colors"></span>
+                        <span id="hintPip1" class="h-1 flex-1 rounded-full bg-white/20 transition-colors"></span>
+                        <span id="hintPip2" class="h-1 flex-1 rounded-full bg-white/20 transition-colors"></span>
+                        <span id="hintPip3" class="h-1 flex-1 rounded-full bg-white/20 transition-colors"></span>
                     </div>
                 </button>
 
                 <!-- Analyze Move Button -->
                 <button type="button" id="analyzeMoveBtn"
-                    class="py-2 px-2 rounded-xl bg-[#312E2B] hover:bg-[#3C3936] active:scale-[0.98] border border-white/10 flex flex-col items-center justify-center transition cursor-pointer">
+                    class="py-1.5 px-2 rounded-xl bg-[#312E2B] hover:bg-[#3C3936] active:scale-[0.98] border border-white/10 flex flex-col items-center justify-center transition cursor-pointer">
                     <span class="text-xs font-extrabold text-white">Analyze Move</span>
                     <span id="analyzeMoveSub" class="text-[10px] text-[#9E9C99]">Last Move</span>
                 </button>
 
                 <!-- Analyze Board Button -->
                 <button type="button" id="analyzeBoardBtn"
-                    class="py-2 px-2 rounded-xl bg-[#312E2B] hover:bg-[#3C3936] active:scale-[0.98] border border-white/10 flex flex-col items-center justify-center transition cursor-pointer">
+                    class="py-1.5 px-2 rounded-xl bg-[#312E2B] hover:bg-[#3C3936] active:scale-[0.98] border border-white/10 flex flex-col items-center justify-center transition cursor-pointer">
                     <span class="text-xs font-extrabold text-[#81B64C]">Analyze Board</span>
                     <span class="text-[10px] text-[#9E9C99]">Full Position</span>
                 </button>
@@ -973,7 +979,7 @@
             } else {
                 card.style.position = 'relative';
                 card.style.backgroundColor = 'rgba(49, 46, 43, 0.96)';
-                scrollEl.style.maxHeight = '78px';
+                scrollEl.style.maxHeight = '58px';
                 expandBtn.textContent = 'Expand';
                 sliderBar.classList.add('hidden');
                 if (analysisArrow || analysisHighlightSq) {
@@ -985,12 +991,17 @@
         }
 
         function updateHintPips() {
-            const p1 = document.getElementById('hintPip1');
-            const p2 = document.getElementById('hintPip2');
-            const p3 = document.getElementById('hintPip3');
-            p1.style.backgroundColor = hintLevel >= 1 ? '#F5F682' : 'rgba(255,255,255,0.2)';
-            p2.style.backgroundColor = hintLevel >= 2 ? '#B9CA43' : 'rgba(255,255,255,0.2)';
-            p3.style.backgroundColor = hintLevel >= 3 ? '#81B64C' : 'rgba(255,255,255,0.2)';
+            for (let i = 1; i <= 3; i++) {
+                const pip = document.getElementById(`hintPip${i}`);
+                if (!pip) continue;
+                if (i <= hintLevel) {
+                    pip.classList.remove('bg-white/20');
+                    pip.classList.add('bg-[#F5F682]');
+                } else {
+                    pip.classList.add('bg-white/20');
+                    pip.classList.remove('bg-[#F5F682]');
+                }
+            }
         }
 
         function resetHintState() {
@@ -1001,143 +1012,10 @@
             updateHintPips();
         }
 
-        // =====================================================================
-        // 6. CAPTURED PIECES & MATERIAL ADVANTAGE STRIP
-        // =====================================================================
-        function renderCapturedPieces(state) {
-            const startCounts = { P: 8, N: 2, B: 2, R: 2, Q: 1 };
-            const current = { w: { P: 0, N: 0, B: 0, R: 0, Q: 0 }, b: { P: 0, N: 0, B: 0, R: 0, Q: 0 } };
-
-            let wMat = 0, bMat = 0;
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    const p = state.board[r][c];
-                    if (p && p.type !== 'K') {
-                        current[p.color][p.type]++;
-                        if (p.color === 'w') wMat += PIECE_VALUES[p.type];
-                        else bMat += PIECE_VALUES[p.type];
-                    }
-                }
-            }
-
-            const order = ['Q', 'R', 'B', 'N', 'P'];
-            let capturedBlackHtml = ''; // Black pieces captured by White
-            let capturedWhiteHtml = ''; // White pieces captured by Black
-
-            for (const t of order) {
-                const missingB = Math.max(0, startCounts[t] - current.b[t]);
-                for (let i = 0; i < missingB; i++) capturedBlackHtml += getMiniCapturedIcon('b', t);
-
-                const missingW = Math.max(0, startCounts[t] - current.w[t]);
-                for (let i = 0; i < missingW; i++) capturedWhiteHtml += getMiniCapturedIcon('w', t);
-            }
-
-            const diff = wMat - bMat;
-            if (diff > 0) {
-                capturedBlackHtml += `<span class="ml-1.5 text-[11px] font-bold text-[#B0AFAF]">+${diff}</span>`;
-            } else if (diff < 0) {
-                capturedWhiteHtml += `<span class="ml-1.5 text-[11px] font-bold text-[#B0AFAF]">+${Math.abs(diff)}</span>`;
-            }
-
-            document.getElementById('capturedByBlackRow').innerHTML = capturedBlackHtml || '<span class="text-[10px] text-[#6E6C69]">—</span>';
-            document.getElementById('capturedByWhiteRow').innerHTML = capturedWhiteHtml || '<span class="text-[10px] text-[#6E6C69]">—</span>';
-        }
-
-        // =====================================================================
-        // 7. MOVE HISTORY & BOARD RENDERER
-        // =====================================================================
-        function renderMoveHistory() {
-            const listEl = document.getElementById('moveHistoryList');
-            const prevBtn = document.getElementById('prevMoveBtn');
-            const nextBtn = document.getElementById('nextMoveBtn');
-
-            prevBtn.disabled = viewIndex <= 0;
-            nextBtn.disabled = viewIndex >= timeline.length - 1;
-
-            if (timeline.length <= 1) {
-                listEl.innerHTML = `<span class="text-[#8E8C89] italic text-[11px]">No moves yet</span>`;
-                return;
-            }
-
-            let html = '';
-            for (let i = 1; i < timeline.length; i++) {
-                const entry = timeline[i];
-                if (i % 2 === 1) {
-                    const moveNum = Math.ceil(i / 2);
-                    html += `<span class="text-[#8E8C89] font-semibold ml-1">${moveNum}.</span>`;
-                }
-                const activeClass = i === viewIndex
-                    ? 'bg-[#81B64C] text-white font-bold'
-                    : 'bg-[#262421] text-[#D4D2CF] hover:bg-[#3C3936]';
-                html += `<button type="button" data-idx="${i}" class="history-pill px-1.5 py-0.5 rounded ${activeClass} whitespace-nowrap cursor-pointer">${entry.notation}</button>`;
-            }
-            listEl.innerHTML = html;
-
-            listEl.querySelectorAll('.history-pill').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const idx = parseInt(btn.getAttribute('data-idx'), 10);
-                    jumpToHistoryIndex(idx);
-                });
-            });
-
-            const activePill = listEl.querySelector('.bg-\\[\\#81B64C\\]');
-            if (activePill) {
-                activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            }
-
-            renderExpandedHistoryPanel();
-        }
-
-        function renderExpandedHistoryPanel() {
-            const panel = document.getElementById('expandedHistoryPanel');
-            if (!panel || panel.classList.contains('hidden')) return;
-
-            const sideLabel = activeConfig.userColor === 'w' ? '♔ White' : '♚ Black';
+        function updateHeaderSummary() {
             const aggrPct = Math.round(activeConfig.aggression * 100);
-            const aggrTag = aggrPct < 30 ? 'Defensive' : (aggrPct > 70 ? 'Aggressive' : 'Balanced');
-
-            document.getElementById('expandedSettingsSummary').innerHTML = `
-                <div><span class="text-[#8E8C89]">Your Side:</span> <strong class="text-white">${sideLabel}</strong></div>
-                <div><span class="text-[#8E8C89]">Opponent:</span> <strong class="text-[#81B64C]">${activeConfig.elo} ELO</strong></div>
-                <div><span class="text-[#8E8C89]">Play Style:</span> <strong class="text-white">${activeConfig.style}</strong></div>
-                <div><span class="text-[#8E8C89]">Aggression:</span> <strong class="text-[#B9CA43]">${aggrPct}% (${aggrTag})</strong></div>
-            `;
-
-            const gridEl = document.getElementById('fullMoveHistoryGrid');
-            if (timeline.length <= 1) {
-                gridEl.innerHTML = `<div class="col-span-2 text-[#8E8C89] italic text-[11px] py-1">No moves played yet.</div>`;
-                return;
-            }
-
-            let html = '';
-            for (let i = 1; i < timeline.length; i += 2) {
-                const moveNum = Math.ceil(i / 2);
-                const wEntry = timeline[i];
-                const bEntry = timeline[i + 1];
-
-                const wActive = i === viewIndex ? 'bg-[#81B64C] text-white font-bold' : 'bg-[#262421] text-[#E5E5E5] hover:bg-[#3C3936]';
-                html += `<div class="flex items-center gap-1.5 bg-[#262421]/60 px-2 py-1 rounded">
-                    <span class="text-[#8E8C89] font-semibold w-5">${moveNum}.</span>
-                    <button type="button" data-idx="${i}" class="full-hist-btn flex-1 text-left px-1.5 py-0.5 rounded ${wActive} cursor-pointer">${wEntry.notation}</button>
-                </div>`;
-
-                if (bEntry) {
-                    const bActive = (i + 1) === viewIndex ? 'bg-[#81B64C] text-white font-bold' : 'bg-[#262421] text-[#E5E5E5] hover:bg-[#3C3936]';
-                    html += `<div class="flex items-center gap-1.5 bg-[#262421]/60 px-2 py-1 rounded">
-                        <button type="button" data-idx="${i + 1}" class="full-hist-btn flex-1 text-left px-1.5 py-0.5 rounded ${bActive} cursor-pointer">${bEntry.notation}</button>
-                    </div>`;
-                } else {
-                    html += `<div></div>`;
-                }
-            }
-            gridEl.innerHTML = html;
-
-            gridEl.querySelectorAll('.full-hist-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const idx = parseInt(btn.getAttribute('data-idx'), 10);
-                    jumpToHistoryIndex(idx);
-                });
-            });
+            document.getElementById('headerSubtitle').textContent =
+                `Opponent: ${activeConfig.elo} ELO • ${activeConfig.style} (${aggrPct}% Aggr.)`;
         }
 
         function toggleHistoryPanel(forceState) {
@@ -1147,54 +1025,179 @@
             if (isHistoryPanelExpanded) {
                 panel.classList.remove('hidden');
                 btn.textContent = '−';
-                renderExpandedHistoryPanel();
+                renderExpandedSettingsAndHistory();
             } else {
                 panel.classList.add('hidden');
                 btn.textContent = '+';
             }
         }
 
-        function queuePieceAnimation(move, isReverse = false) {
-            if (!move) return;
-            pendingPieceAnimation = {
-                from: isReverse ? move.to : move.from,
-                to: isReverse ? move.from : move.to,
-                color: move.piece.color,
-                type: isReverse ? move.piece.type : (move.promotion || move.piece.type)
-            };
+        function renderExpandedSettingsAndHistory() {
+            const summaryEl = document.getElementById('expandedGameSettingsSummary');
+            if (summaryEl) {
+                const sideText = activeConfig.userColor === 'w' ? '♔ White' : '♚ Black';
+                const aggrPct = Math.round(activeConfig.aggression * 100);
+                summaryEl.innerHTML = `
+                    <div><span class="text-[#8E8C89]">Your Side:</span> <strong class="text-white">${sideText}</strong></div>
+                    <div><span class="text-[#8E8C89]">Opponent:</span> <strong class="text-[#81B64C]">${activeConfig.elo} ELO</strong></div>
+                    <div><span class="text-[#8E8C89]">Play Style:</span> <strong class="text-white">${activeConfig.style}</strong></div>
+                    <div><span class="text-[#8E8C89]">Aggression:</span> <strong class="text-[#B9CA43]">${aggrPct}%</strong></div>
+                `;
+            }
+
+            const gridEl = document.getElementById('fullMoveHistoryGrid');
+            if (!gridEl) return;
+            if (timeline.length <= 1) {
+                gridEl.innerHTML = `<div class="col-span-2 text-[#8E8C89] italic py-1">No moves played yet.</div>`;
+                return;
+            }
+
+            let html = '';
+            for (let i = 1; i < timeline.length; i += 2) {
+                const moveNum = Math.ceil(i / 2);
+                const wActive = viewIndex === i ? 'bg-[#81B64C] text-white font-bold' : 'bg-[#262421] text-[#DCDCDC] hover:bg-[#3C3936]';
+                html += `<button type="button" data-hist-idx="${i}" class="full-hist-btn text-left px-2 py-1 rounded ${wActive} truncate cursor-pointer">
+                    <span class="text-[#8E8C89] mr-1">${moveNum}.</span>${timeline[i].notation}
+                </button>`;
+
+                if (i + 1 < timeline.length) {
+                    const bActive = viewIndex === i + 1 ? 'bg-[#81B64C] text-white font-bold' : 'bg-[#262421] text-[#DCDCDC] hover:bg-[#3C3936]';
+                    html += `<button type="button" data-hist-idx="${i + 1}" class="full-hist-btn text-left px-2 py-1 rounded ${bActive} truncate cursor-pointer">
+                        ${timeline[i + 1].notation}
+                    </button>`;
+                } else {
+                    html += `<div></div>`;
+                }
+            }
+            gridEl.innerHTML = html;
+
+            gridEl.querySelectorAll('.full-hist-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.getAttribute('data-hist-idx'), 10);
+                    jumpToHistoryIndex(idx);
+                });
+            });
+        }
+
+        // =====================================================================
+        // 6. CAPTURED PIECES, HISTORY STRIP & BOARD RENDERER
+        // =====================================================================
+        function renderCapturedPieces(state) {
+            const startCounts = { P: 8, N: 2, B: 2, R: 2, Q: 1 };
+            const currentW = { P: 0, N: 0, B: 0, R: 0, Q: 0 };
+            const currentB = { P: 0, N: 0, B: 0, R: 0, Q: 0 };
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = state.board[r][c];
+                    if (!p || p.type === 'K') continue;
+                    if (p.color === 'w') currentW[p.type]++;
+                    else currentB[p.type]++;
+                }
+            }
+
+            const capturedWhite = [];
+            const capturedBlack = [];
+            let whiteMat = 0, blackMat = 0;
+
+            for (const t of ['Q', 'R', 'B', 'N', 'P']) {
+                whiteMat += currentW[t] * PIECE_VALUES[t];
+                blackMat += currentB[t] * PIECE_VALUES[t];
+                const lostW = Math.max(0, startCounts[t] - currentW[t]);
+                const lostB = Math.max(0, startCounts[t] - currentB[t]);
+                for (let i = 0; i < lostW; i++) capturedWhite.push(t);
+                for (let i = 0; i < lostB; i++) capturedBlack.push(t);
+            }
+
+            const byBlackEl = document.getElementById('capturedByBlackRow');
+            const byWhiteEl = document.getElementById('capturedByWhiteRow');
+
+            let blackRowHtml = capturedWhite.map(t => getMiniCapturedIcon('w', t)).join('');
+            if (blackMat > whiteMat) {
+                blackRowHtml += `<span class="ml-1 text-[11px] font-bold text-[#B0AFAF]">+${blackMat - whiteMat}</span>`;
+            }
+            byBlackEl.innerHTML = blackRowHtml || `<span class="text-[10px] text-[#6E6C69]">—</span>`;
+
+            let whiteRowHtml = capturedBlack.map(t => getMiniCapturedIcon('b', t)).join('');
+            if (whiteMat > blackMat) {
+                whiteRowHtml += `<span class="ml-1 text-[11px] font-bold text-[#B0AFAF]">+${whiteMat - blackMat}</span>`;
+            }
+            byWhiteEl.innerHTML = whiteRowHtml || `<span class="text-[10px] text-[#6E6C69]">—</span>`;
+        }
+
+        function renderHistoryStrip() {
+            const listEl = document.getElementById('moveHistoryList');
+            const prevBtn = document.getElementById('prevMoveBtn');
+            const nextBtn = document.getElementById('nextMoveBtn');
+
+            prevBtn.disabled = viewIndex <= 0;
+            nextBtn.disabled = viewIndex >= timeline.length - 1;
+
+            if (timeline.length <= 1) {
+                listEl.innerHTML = `<span class="text-[#8E8C89] italic text-[11px]">No moves yet</span>`;
+            } else {
+                let html = '';
+                for (let i = 1; i < timeline.length; i++) {
+                    if (i % 2 === 1) {
+                        html += `<span class="text-[#8E8C89] font-semibold ml-1">${Math.ceil(i / 2)}.</span>`;
+                    }
+                    const activeCls = i === viewIndex
+                        ? 'bg-[#81B64C] text-white font-bold'
+                        : 'bg-[#262421] text-[#D8D8D8] hover:bg-[#3C3936]';
+                    html += `<button type="button" data-idx="${i}" class="hist-pill px-1.5 py-0.5 rounded ${activeCls} whitespace-nowrap cursor-pointer">${timeline[i].notation}</button>`;
+                }
+                listEl.innerHTML = html;
+
+                listEl.querySelectorAll('.hist-pill').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                        jumpToHistoryIndex(idx);
+                    });
+                });
+
+                const activePill = listEl.querySelector(`[data-idx="${viewIndex}"]`);
+                if (activePill) {
+                    activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            }
+
+            if (isHistoryPanelExpanded) {
+                renderExpandedSettingsAndHistory();
+            }
         }
 
         function jumpToHistoryIndex(idx) {
             if (idx < 0 || idx >= timeline.length) return;
-            if (idx === viewIndex + 1 && timeline[idx].move) {
-                queuePieceAnimation(timeline[idx].move, false);
-            } else if (idx === viewIndex - 1 && timeline[viewIndex].move) {
-                queuePieceAnimation(timeline[viewIndex].move, true);
+            const prevIdx = viewIndex;
+            if (Math.abs(idx - prevIdx) === 1) {
+                if (idx > prevIdx && timeline[idx].move) {
+                    const m = timeline[idx].move;
+                    pendingPieceAnimation = { from: m.from, to: m.to, color: m.piece.color, type: m.promotion || m.piece.type };
+                } else if (idx < prevIdx && timeline[prevIdx].move) {
+                    const m = timeline[prevIdx].move;
+                    pendingPieceAnimation = { from: m.to, to: m.from, color: m.piece.color, type: m.piece.type };
+                }
             }
             viewIndex = idx;
             selectedSquare = null;
             legalMovesForSelected = [];
             resetHintState();
             renderBoard();
+            renderHistoryStrip();
+            renderCapturedPieces(timeline[viewIndex].state);
         }
 
-        function drawBoardArrow(arrow, flipped) {
+        function drawArrowOnBoard(fromSq, toSq, color = '#81B64C', flipped = false) {
             const svg = document.getElementById('boardArrowOverlay');
-            if (!arrow) {
-                svg.innerHTML = '';
-                return;
-            }
-            const [fr, fc] = arrow.from;
-            const [tr, tc] = arrow.to;
-            const dFromR = flipped ? 7 - fr : fr;
-            const dFromC = flipped ? 7 - fc : fc;
-            const dToR = flipped ? 7 - tr : tr;
-            const dToC = flipped ? 7 - tc : tc;
+            const fr = flipped ? 7 - fromSq[0] : fromSq[0];
+            const fc = flipped ? 7 - fromSq[1] : fromSq[1];
+            const tr = flipped ? 7 - toSq[0] : toSq[0];
+            const tc = flipped ? 7 - toSq[1] : toSq[1];
 
-            const x1 = dFromC * 100 + 50;
-            const y1 = dFromR * 100 + 50;
-            const x2 = dToC * 100 + 50;
-            const y2 = dToR * 100 + 50;
+            const x1 = fc * 100 + 50;
+            const y1 = fr * 100 + 50;
+            const x2 = tc * 100 + 50;
+            const y2 = tr * 100 + 50;
 
             const dx = x2 - x1;
             const dy = y2 - y1;
@@ -1203,176 +1206,156 @@
                 svg.innerHTML = '';
                 return;
             }
+
             const ux = dx / len;
             const uy = dy / len;
+            const px = -uy;
+            const py = ux;
 
             const startX = x1 + ux * 18;
             const startY = y1 + uy * 18;
-            const tipX = x2 - ux * 10;
-            const tipY = y2 - uy * 10;
+            const tipX = x2 - ux * 12;
+            const tipY = y2 - uy * 12;
             const neckX = tipX - ux * 36;
             const neckY = tipY - uy * 36;
 
-            const px = -uy;
-            const py = ux;
-            const col = arrow.color || '#81B64C';
+            const shaftHalf = 11;
+            const headHalf = 26;
 
-            svg.innerHTML = `
-                <line x1="${startX}" y1="${startY}" x2="${neckX}" y2="${neckY}"
-                    stroke="${col}" stroke-width="22" stroke-linecap="round" opacity="0.92" />
-                <polygon points="${tipX},${tipY} ${neckX + px * 26},${neckY + py * 26} ${neckX - px * 26},${neckY - py * 26}"
-                    fill="${col}" opacity="0.95" />
-            `;
+            const pts = [
+                `${startX + px * shaftHalf},${startY + py * shaftHalf}`,
+                `${neckX + px * shaftHalf},${neckY + py * shaftHalf}`,
+                `${neckX + px * headHalf},${neckY + py * headHalf}`,
+                `${tipX},${tipY}`,
+                `${neckX - px * headHalf},${neckY - py * headHalf}`,
+                `${neckX - px * shaftHalf},${neckY - py * shaftHalf}`,
+                `${startX - px * shaftHalf},${startY - py * shaftHalf}`
+            ].join(' ');
+
+            svg.innerHTML = `<polygon points="${pts}" fill="${color}" fill-opacity="0.88" stroke="#1E1E1E" stroke-width="3" stroke-linejoin="round" />`;
         }
 
         function renderBoard() {
-            const currentEntry = timeline[viewIndex];
-            const state = currentEntry.state;
-            const flipped = activeConfig.userColor === 'b';
             const grid = document.getElementById('chessBoardGrid');
-            const legalSet = new Set(legalMovesForSelected.map(m => `${m.to[0]},${m.to[1]}`));
+            const svg = document.getElementById('boardArrowOverlay');
+            const entry = timeline[viewIndex];
+            const state = entry.state;
+            const flipped = activeConfig.userColor === 'b';
 
-            let html = '';
-            for (let dRow = 0; dRow < 8; dRow++) {
-                const r = flipped ? 7 - dRow : dRow;
-                for (let dCol = 0; dCol < 8; dCol++) {
-                    const c = flipped ? 7 - dCol : dCol;
+            grid.innerHTML = '';
+            svg.innerHTML = '';
+
+            const legalDestSet = new Set(legalMovesForSelected.map(m => `${m.to[0]},${m.to[1]}`));
+            const hintPieceSq = hintLevel >= 2 && cachedHintData ? cachedHintData.move.from : null;
+
+            for (let dr = 0; dr < 8; dr++) {
+                const r = flipped ? 7 - dr : dr;
+                for (let dc = 0; dc < 8; dc++) {
+                    const c = flipped ? 7 - dc : dc;
                     const isLight = (r + c) % 2 === 0;
-                    const piece = state.board[r][c];
-
                     const isSelected = selectedSquare && selectedSquare[0] === r && selectedSquare[1] === c;
-                    const isLastFrom = state.lastMove && state.lastMove.from[0] === r && state.lastMove.from[1] === c;
-                    const isLastTo = state.lastMove && state.lastMove.to[0] === r && state.lastMove.to[1] === c;
-                    const isHintPieceSq = (hintLevel >= 2 && cachedHintData && cachedHintData.move.from[0] === r && cachedHintData.move.from[1] === c) ||
-                                          (analysisHighlightSq && analysisHighlightSq[0] === r && analysisHighlightSq[1] === c);
+                    const isLastMoveSq = state.lastMove &&
+                        ((state.lastMove.from[0] === r && state.lastMove.from[1] === c) ||
+                         (state.lastMove.to[0] === r && state.lastMove.to[1] === c));
 
-                    let bg = isLight ? '#EBECD0' : '#739552';
-                    if (isHintPieceSq) {
-                        bg = '#00A88F';
-                    } else if (isSelected || isLastFrom || isLastTo) {
-                        bg = isLight ? '#F5F682' : '#B9CA43';
+                    let bgHex = isLight ? '#EBECD0' : '#739552';
+                    if (isSelected || isLastMoveSq) {
+                        bgHex = isLight ? '#F5F682' : '#B9CA43';
+                    }
+                    if (hintPieceSq && hintPieceSq[0] === r && hintPieceSq[1] === c) {
+                        bgHex = '#00A88F';
+                    }
+                    if (analysisHighlightSq && analysisHighlightSq[0] === r && analysisHighlightSq[1] === c) {
+                        bgHex = '#00A88F';
+                    }
+
+                    const sqDiv = document.createElement('div');
+                    sqDiv.style.backgroundColor = bgHex;
+                    sqDiv.className = 'relative w-full h-full flex items-center justify-center cursor-pointer';
+
+                    if (aiMovePulseActive && state.lastMove && state.lastMove.to[0] === r && state.lastMove.to[1] === c &&
+                        state.lastMove.piece.color !== activeConfig.userColor) {
+                        sqDiv.classList.add('ai-pulse', 'z-10');
                     }
 
                     const coordColor = isLight ? '#739552' : '#EBECD0';
-                    const isLegalDest = legalSet.has(`${r},${c}`);
-                    const pulseClass = (aiMovePulseActive && isLastTo) ? 'ai-pulse' : '';
-
-                    html += `<div data-r="${r}" data-c="${c}" style="background-color:${bg};"
-                        class="board-sq relative w-full h-full flex items-center justify-center cursor-pointer ${pulseClass}">`;
-
-                    if (dCol === 0) {
-                        html += `<span style="color:${coordColor};" class="absolute top-0.5 left-1 text-[10px] font-extrabold leading-none pointer-events-none">${8 - r}</span>`;
+                    if (dc === 0) {
+                        const rankSpan = document.createElement('span');
+                        rankSpan.textContent = 8 - r;
+                        rankSpan.style.color = coordColor;
+                        rankSpan.className = 'absolute top-0.5 left-1 text-[10px] font-extrabold leading-none pointer-events-none';
+                        sqDiv.appendChild(rankSpan);
                     }
-                    if (dRow === 7) {
-                        html += `<span style="color:${coordColor};" class="absolute bottom-0.5 right-1 text-[10px] font-extrabold leading-none pointer-events-none">${String.fromCharCode(97 + c)}</span>`;
+                    if (dr === 7) {
+                        const fileSpan = document.createElement('span');
+                        fileSpan.textContent = String.fromCharCode(97 + c);
+                        fileSpan.style.color = coordColor;
+                        fileSpan.className = 'absolute bottom-0.5 right-1 text-[10px] font-extrabold leading-none pointer-events-none';
+                        sqDiv.appendChild(fileSpan);
                     }
 
+                    const piece = state.board[r][c];
                     if (piece) {
-                        const isAnimTarget = pendingPieceAnimation &&
-                            pendingPieceAnimation.to[0] === r &&
-                            pendingPieceAnimation.to[1] === c;
-                        const hiddenAttr = isAnimTarget ? 'data-anim-dest="true" style="opacity:0;"' : '';
-                        html += `<div ${hiddenAttr} class="w-[84%] h-[84%] flex items-center justify-center pointer-events-none">${getPieceSVG(piece.color, piece.type)}</div>`;
-                    }
+                        const pWrap = document.createElement('div');
+                        pWrap.className = 'w-[86%] h-[86%] flex items-center justify-center pointer-events-none relative z-10';
+                        pWrap.innerHTML = getPieceSVG(piece.color, piece.type);
 
-                    // Semitransparent grey circle indicator on all legal destinations
-                    if (isLegalDest) {
-                        if (piece) {
-                            html += `<div class="absolute inset-1 rounded-full border-[4px] border-neutral-700/45 pointer-events-none z-10"></div>`;
-                        } else {
-                            html += `<div class="absolute w-[32%] h-[32%] rounded-full bg-neutral-600/55 pointer-events-none z-10"></div>`;
+                        if (pendingPieceAnimation && pendingPieceAnimation.to[0] === r && pendingPieceAnimation.to[1] === c) {
+                            const anim = pendingPieceAnimation;
+                            const fromDisplayR = flipped ? 7 - anim.from[0] : anim.from[0];
+                            const fromDisplayC = flipped ? 7 - anim.from[1] : anim.from[1];
+                            const deltaX = (fromDisplayC - dc) * 100;
+                            const deltaY = (fromDisplayR - dr) * 100;
+                            pWrap.style.transform = `translate(${deltaX}%, ${deltaY}%)`;
+                            pWrap.style.zIndex = '30';
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    pWrap.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
+                                    pWrap.style.transform = 'translate(0%, 0%)';
+                                });
+                            });
+                            pendingPieceAnimation = null;
                         }
+
+                        sqDiv.appendChild(pWrap);
                     }
 
-                    html += `</div>`;
+                    if (legalDestSet.has(`${r},${c}`)) {
+                        const marker = document.createElement('div');
+                        if (piece) {
+                            marker.className = 'absolute inset-1 rounded-full border-4 border-neutral-600/45 pointer-events-none z-20';
+                        } else {
+                            marker.className = 'w-[30%] h-[30%] rounded-full bg-neutral-500/55 pointer-events-none z-20';
+                        }
+                        sqDiv.appendChild(marker);
+                    }
+
+                    sqDiv.addEventListener('click', () => handleSquareTap(r, c));
+                    grid.appendChild(sqDiv);
                 }
             }
 
-            grid.innerHTML = html;
-
-            // Execute smooth FLIP-style slide animation for the moved piece
-            if (pendingPieceAnimation) {
-                const anim = pendingPieceAnimation;
-                pendingPieceAnimation = null;
-                const dFromR = flipped ? 7 - anim.from[0] : anim.from[0];
-                const dFromC = flipped ? 7 - anim.from[1] : anim.from[1];
-                const dToR = flipped ? 7 - anim.to[0] : anim.to[0];
-                const dToC = flipped ? 7 - anim.to[1] : anim.to[1];
-
-                const dxPct = (dFromC - dToC) * 100;
-                const dyPct = (dFromR - dToR) * 100;
-
-                const flyer = document.createElement('div');
-                flyer.style.position = 'absolute';
-                flyer.style.width = '12.5%';
-                flyer.style.height = '12.5%';
-                flyer.style.left = `${dToC * 12.5}%`;
-                flyer.style.top = `${dToR * 12.5}%`;
-                flyer.style.display = 'flex';
-                flyer.style.alignItems = 'center';
-                flyer.style.justifyContent = 'center';
-                flyer.style.pointerEvents = 'none';
-                flyer.style.zIndex = '25';
-                flyer.style.transform = `translate(${dxPct}%, ${dyPct}%) scale(1.06)`;
-                flyer.style.transition = 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1)';
-                flyer.innerHTML = `<div class="w-[84%] h-[84%] flex items-center justify-center drop-shadow-md">${getPieceSVG(anim.color, anim.type)}</div>`;
-
-                const boardContainer = grid.parentElement;
-                boardContainer.appendChild(flyer);
-
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        flyer.style.transform = 'translate(0%, 0%) scale(1)';
-                    });
-                });
-
-                setTimeout(() => {
-                    flyer.remove();
-                    const destPiece = grid.querySelector('[data-anim-dest="true"]');
-                    if (destPiece) destPiece.style.opacity = '1';
-                }, 230);
-            }
-
-            // Attach click handlers to squares
-            grid.querySelectorAll('.board-sq').forEach(sqEl => {
-                sqEl.addEventListener('click', () => {
-                    const r = parseInt(sqEl.getAttribute('data-r'), 10);
-                    const c = parseInt(sqEl.getAttribute('data-c'), 10);
-                    handleSquareTap(r, c);
-                });
-            });
-
-            // Arrow overlay
-            if (hintLevel >= 3 && cachedHintData) {
-                drawBoardArrow({ from: cachedHintData.move.from, to: cachedHintData.move.to, color: '#81B64C' }, flipped);
+            if (hintLevel === 3 && cachedHintData) {
+                drawArrowOnBoard(cachedHintData.move.from, cachedHintData.move.to, '#81B64C', flipped);
             } else if (analysisArrow) {
-                drawBoardArrow(analysisArrow, flipped);
-            } else {
-                drawBoardArrow(null, flipped);
+                drawArrowOnBoard(analysisArrow.from, analysisArrow.to, analysisArrow.color || '#00A88F', flipped);
             }
-
-            renderCapturedPieces(state);
-            renderMoveHistory();
         }
 
         // =====================================================================
-        // 8. GAME FLOW & INTERACTION HANDLERS
+        // 7. USER INTERACTION & GAME LOOP
         // =====================================================================
         function handleSquareTap(r, c) {
-            if (isAiThinking) return;
             const currentEntry = timeline[viewIndex];
             const state = currentEntry.state;
 
-            // Clear any active Analyze Move arrow/highlight indicators when tapping anywhere on the board
-            let clearedAnalysis = false;
             if (analysisArrow || analysisHighlightSq) {
                 analysisArrow = null;
                 analysisHighlightSq = null;
-                clearedAnalysis = true;
+                renderBoard();
             }
 
-            // 1. First check if user has a piece selected and tapped a legal destination (including capturing the opponent's last-moved piece!)
-            if (viewIndex === timeline.length - 1 && state.turn === activeConfig.userColor) {
+            if (viewIndex === timeline.length - 1 && !isAiThinking && state.turn === activeConfig.userColor) {
                 const chosenMove = legalMovesForSelected.find(m => m.to[0] === r && m.to[1] === c);
                 if (chosenMove) {
                     executeUserMove(chosenMove);
@@ -1380,38 +1363,42 @@
                 }
             }
 
-            // 2. If user taps the opponent's recently moved piece (without executing a capture), show analysis of opponent's move
             if (state.lastMove && state.lastMove.to[0] === r && state.lastMove.to[1] === c &&
                 state.lastMove.piece.color !== activeConfig.userColor && lastAiMoveContext) {
-                selectedSquare = null;
-                legalMovesForSelected = [];
                 setCoachFeedback("Opponent Move Breakdown", analyzeAiMoveDetailed(lastAiMoveContext), true);
+                return;
+            }
+
+            if (viewIndex < timeline.length - 1) {
+                setCoachFeedback("Reviewing History", "You are viewing a past move. Tap › to return to the live position.", false);
+                return;
+            }
+
+            if (isAiThinking || state.turn !== activeConfig.userColor) return;
+
+            const clickedPiece = state.board[r][c];
+            if (clickedPiece && clickedPiece.color === activeConfig.userColor) {
+                if (selectedSquare && selectedSquare[0] === r && selectedSquare[1] === c) {
+                    selectedSquare = null;
+                    legalMovesForSelected = [];
+                } else {
+                    selectedSquare = [r, c];
+                    legalMovesForSelected = getLegalMoves(state, activeConfig.userColor)
+                        .filter(m => m.from[0] === r && m.from[1] === c);
+                }
                 renderBoard();
-                return;
-            }
-
-            // Only allow selecting pieces from the latest board state when it's user's turn
-            if (viewIndex !== timeline.length - 1 || state.turn !== activeConfig.userColor) {
-                if (clearedAnalysis) renderBoard();
-                return;
-            }
-
-            // 3. Otherwise select user's piece
-            const tappedPiece = state.board[r][c];
-            if (tappedPiece && tappedPiece.color === activeConfig.userColor) {
-                selectedSquare = [r, c];
-                legalMovesForSelected = getLegalMoves(state, activeConfig.userColor)
-                    .filter(m => m.from[0] === r && m.from[1] === c);
             } else {
                 selectedSquare = null;
                 legalMovesForSelected = [];
+                renderBoard();
             }
-            renderBoard();
         }
 
         function executeUserMove(move) {
-            const beforeState = timeline[timeline.length - 1].state;
-            const bestMoveForUser = findBestMoveForColor(beforeState, activeConfig.userColor, { elo: 2000, aggression: 0.55, style: 'Positional' });
+            const beforeState = timeline[viewIndex].state;
+            const strongCfg = { elo: 2000, aggression: 0.55, style: 'Positional' };
+            const bestMoveAtTurn = findBestMoveForColor(beforeState, activeConfig.userColor, strongCfg);
+
             const afterState = applyMove(beforeState, move);
             const notation = formatMoveNotation(move, afterState);
 
@@ -1419,7 +1406,14 @@
                 beforeState,
                 move,
                 afterState,
-                bestMove: bestMoveForUser
+                bestMove: bestMoveAtTurn
+            };
+
+            pendingPieceAnimation = {
+                from: move.from,
+                to: move.to,
+                color: move.piece.color,
+                type: move.promotion || move.piece.type
             };
 
             timeline.push({ state: afterState, move, notation });
@@ -1427,169 +1421,211 @@
             selectedSquare = null;
             legalMovesForSelected = [];
             resetHintState();
-            queuePieceAnimation(move, false);
-            renderBoard();
 
-            // Check game end
+            document.getElementById('analyzeMoveSub').textContent = notation;
+            renderBoard();
+            renderHistoryStrip();
+            renderCapturedPieces(afterState);
+
             const oppMoves = getLegalMoves(afterState, afterState.turn);
             if (oppMoves.length === 0) {
                 const msg = isKingInCheck(afterState, afterState.turn)
-                    ? `Checkmate! You won with ${notation}!`
-                    : `Game drawn by Stalemate.`;
+                    ? `Checkmate! You defeated the ${activeConfig.elo} ELO ${activeConfig.style} AI!`
+                    : "Game drawn by Stalemate!";
                 setCoachFeedback("Game Over", msg, false);
                 return;
             }
 
+            setCoachFeedback("Coach Feedback", `You played ${notation}. Tap "Analyze Move" for a full breakdown, or watch the opponent's reply.`, false);
             triggerAiTurn();
         }
 
         function triggerAiTurn() {
+            const currentState = timeline[viewIndex].state;
+            const aiColor = activeConfig.userColor === 'w' ? 'b' : 'w';
+            if (currentState.turn !== aiColor) return;
+
             isAiThinking = true;
-            setCoachFeedback("Coach Feedback", "Opponent is thinking...", false);
+            setCoachFeedback("Opponent Thinking...", `${activeConfig.elo} ELO (${activeConfig.style}) is calculating a reply...`, false);
 
             setTimeout(() => {
-                const currentState = timeline[timeline.length - 1].state;
-                const aiColor = activeConfig.userColor === 'w' ? 'b' : 'w';
-                const aiMove = findBestMoveForColor(currentState, aiColor, activeConfig);
+                const liveState = timeline[viewIndex].state;
+                const aiMove = findBestMoveForColor(liveState, aiColor, activeConfig);
+                isAiThinking = false;
 
-                if (aiMove) {
-                    const afterAi = applyMove(currentState, aiMove);
-                    const notation = formatMoveNotation(aiMove, afterAi);
+                if (!aiMove) return;
 
-                    lastAiMoveContext = {
-                        beforeState: currentState,
-                        move: aiMove,
-                        afterState: afterAi
-                    };
+                const afterState = applyMove(liveState, aiMove);
+                const notation = formatMoveNotation(aiMove, afterState);
 
-                    timeline.push({ state: afterAi, move: aiMove, notation });
-                    viewIndex = timeline.length - 1;
-                    queuePieceAnimation(aiMove, false);
+                lastAiMoveContext = {
+                    beforeState: liveState,
+                    move: aiMove,
+                    afterState
+                };
 
-                    // Trigger brief pulse highlight on moved piece and Analyze Move button
-                    aiMovePulseActive = true;
-                    const analyzeBtn = document.getElementById('analyzeMoveBtn');
-                    analyzeBtn.classList.add('ai-pulse', 'border-[#F5F682]');
-                    if (aiPulseTimer) clearTimeout(aiPulseTimer);
-                    aiPulseTimer = setTimeout(() => {
-                        aiMovePulseActive = false;
-                        analyzeBtn.classList.remove('ai-pulse', 'border-[#F5F682]');
-                        renderBoard();
-                    }, 3200);
+                pendingPieceAnimation = {
+                    from: aiMove.from,
+                    to: aiMove.to,
+                    color: aiMove.piece.color,
+                    type: aiMove.promotion || aiMove.piece.type
+                };
 
-                    const userLegal = getLegalMoves(afterAi, activeConfig.userColor);
-                    if (userLegal.length === 0) {
-                        const endMsg = isKingInCheck(afterAi, activeConfig.userColor)
-                            ? `Checkmate! Opponent won with ${notation}.`
-                            : `Draw by Stalemate after ${notation}.`;
-                        setCoachFeedback("Game Over", endMsg, false);
-                    } else {
-                        setCoachFeedback(
-                            "Coach Feedback",
-                            `Opponent played ${notation}. Tap their moved piece to inspect their plan, or press Analyze Move to review your last move.`,
-                            false
-                        );
-                    }
+                timeline.push({ state: afterState, move: aiMove, notation });
+                viewIndex = timeline.length - 1;
+                resetHintState();
+
+                aiMovePulseActive = true;
+                if (aiPulseTimer) clearTimeout(aiPulseTimer);
+                aiPulseTimer = setTimeout(() => {
+                    aiMovePulseActive = false;
+                    renderBoard();
+                }, 3400);
+
+                renderBoard();
+                renderHistoryStrip();
+                renderCapturedPieces(afterState);
+
+                const userMoves = getLegalMoves(afterState, activeConfig.userColor);
+                if (userMoves.length === 0) {
+                    const msg = isKingInCheck(afterState, activeConfig.userColor)
+                        ? `Checkmate! Opponent (${notation}) won the game.`
+                        : "Game drawn by Stalemate!";
+                    setCoachFeedback("Game Over", msg, false);
+                    return;
                 }
 
-                isAiThinking = false;
-                renderBoard();
-            }, 320);
+                const checkNote = isKingInCheck(afterState, activeConfig.userColor) ? " You are in CHECK!" : "";
+                setCoachFeedback(
+                    "Opponent Moved",
+                    `Opponent played ${notation}.${checkNote} Tap their highlighted piece to inspect why they played it, or make your move.`,
+                    false
+                );
+            }, 340);
         }
 
         function startNewGame() {
             activeConfig = { ...setupConfig };
-            document.getElementById('headerSubtitle').textContent =
-                `Opponent: ${activeConfig.elo} ELO • ${activeConfig.style} (${Math.round(activeConfig.aggression * 100)}% Aggr.)`;
-
-            const initial = createInitialState();
-            timeline = [{ state: initial, move: null, notation: 'Start' }];
+            const initState = createInitialState();
+            timeline = [{ state: initState, move: null, notation: 'Start' }];
             viewIndex = 0;
             selectedSquare = null;
             legalMovesForSelected = [];
+            isAiThinking = false;
             lastUserMoveContext = null;
             lastAiMoveContext = null;
-            isAiThinking = false;
+            aiMovePulseActive = false;
+            pendingPieceAnimation = null;
+
+            if (isCoachExpanded) toggleCoachExpand(false);
+            if (isHistoryPanelExpanded) toggleHistoryPanel(false);
             resetHintState();
+            updateHeaderSummary();
+            document.getElementById('analyzeMoveSub').textContent = 'Last Move';
 
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('gameScreen').classList.remove('hidden');
 
+            renderBoard();
+            renderHistoryStrip();
+            renderCapturedPieces(initState);
+
             if (activeConfig.userColor === 'w') {
-                setCoachFeedback("Coach Feedback", "Match started! You play White. Tap a piece to see legal moves.", false);
-                renderBoard();
+                setCoachFeedback(
+                    "Match Started",
+                    `You are White against a ${activeConfig.elo} ELO ${activeConfig.style} opponent. Select a piece to see legal moves!`,
+                    false
+                );
             } else {
-                renderBoard();
+                setCoachFeedback(
+                    "Match Started",
+                    `You are Black against a ${activeConfig.elo} ELO ${activeConfig.style} opponent. Waiting for White's opening move...`,
+                    false
+                );
                 triggerAiTurn();
             }
         }
 
         // =====================================================================
-        // 9. EVENT LISTENERS BINDING (Runs after DOM is ready)
+        // 8. EVENT LISTENERS INITIALIZATION
         // =====================================================================
         function initApp() {
-            const setupWhiteBtn = document.getElementById('setupWhiteBtn');
-            const setupBlackBtn = document.getElementById('setupBlackBtn');
-            const setupEloSlider = document.getElementById('setupEloSlider');
-            const setupEloLabel = document.getElementById('setupEloLabel');
-            const setupAggrSlider = document.getElementById('setupAggrSlider');
-            const setupAggrLabel = document.getElementById('setupAggrLabel');
-            const styleButtons = document.querySelectorAll('.style-choice-btn');
-            const setupStyleDesc = document.getElementById('setupStyleDesc');
-            const startMatchBtn = document.getElementById('startMatchBtn');
+            const whiteBtn = document.getElementById('setupWhiteBtn');
+            const blackBtn = document.getElementById('setupBlackBtn');
 
-            function refreshColorButtons() {
+            function refreshSideButtons() {
                 if (setupConfig.userColor === 'w') {
-                    setupWhiteBtn.className = "py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white";
-                    setupBlackBtn.className = "py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]";
+                    whiteBtn.className = 'py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white';
+                    blackBtn.className = 'py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]';
                 } else {
-                    setupBlackBtn.className = "py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white";
-                    setupWhiteBtn.className = "py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]";
+                    blackBtn.className = 'py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white';
+                    whiteBtn.className = 'py-3 rounded-xl font-bold text-sm border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]';
                 }
             }
 
-            setupWhiteBtn.addEventListener('click', () => {
+            whiteBtn.addEventListener('click', () => {
                 setupConfig.userColor = 'w';
-                refreshColorButtons();
+                refreshSideButtons();
             });
 
-            setupBlackBtn.addEventListener('click', () => {
+            blackBtn.addEventListener('click', () => {
                 setupConfig.userColor = 'b';
-                refreshColorButtons();
+                refreshSideButtons();
             });
 
-            setupEloSlider.addEventListener('input', () => {
-                setupConfig.elo = parseInt(setupEloSlider.value, 10);
-                setupEloLabel.textContent = `${setupConfig.elo} ELO`;
+            const eloSlider = document.getElementById('setupEloSlider');
+            const eloLabel = document.getElementById('setupEloLabel');
+            eloSlider.addEventListener('input', () => {
+                setupConfig.elo = parseInt(eloSlider.value, 10);
+                eloLabel.textContent = `${setupConfig.elo} ELO`;
             });
 
-            setupAggrSlider.addEventListener('input', () => {
-                const pct = parseInt(setupAggrSlider.value, 10);
+            const aggrSlider = document.getElementById('setupAggrSlider');
+            const aggrLabel = document.getElementById('setupAggrLabel');
+            aggrSlider.addEventListener('input', () => {
+                const pct = parseInt(aggrSlider.value, 10);
                 setupConfig.aggression = pct / 100;
                 const tag = pct < 30 ? 'Defensive' : (pct > 70 ? 'Aggressive' : 'Balanced');
-                setupAggrLabel.textContent = `${pct}% (${tag})`;
+                aggrLabel.textContent = `${pct}% (${tag})`;
             });
 
-            styleButtons.forEach(btn => {
+            const styleBtns = document.querySelectorAll('.style-choice-btn');
+            const styleDesc = document.getElementById('setupStyleDesc');
+            styleBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const chosenStyle = btn.getAttribute('data-style');
-                    setupConfig.style = chosenStyle;
-                    styleButtons.forEach(b => {
-                        if (b.getAttribute('data-style') === chosenStyle) {
-                            b.className = "style-choice-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white";
+                    const chosen = btn.getAttribute('data-style');
+                    setupConfig.style = chosen;
+                    styleDesc.textContent = STYLE_DESCRIPTIONS[chosen] || '';
+                    styleBtns.forEach(b => {
+                        if (b.getAttribute('data-style') === chosen) {
+                            b.className = 'style-choice-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition cursor-pointer bg-[#81B64C]/25 border-[#81B64C] text-white';
                         } else {
-                            b.className = "style-choice-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]";
+                            b.className = 'style-choice-btn py-2.5 px-2 rounded-xl text-xs font-bold border-2 transition cursor-pointer bg-[#262421] border-transparent text-[#B0AFAF]';
                         }
                     });
-                    setupStyleDesc.textContent = STYLE_DESCRIPTIONS[chosenStyle] || '';
                 });
             });
 
-            startMatchBtn.addEventListener('click', () => {
-                startNewGame();
-            });
+            document.getElementById('startMatchBtn').addEventListener('click', startNewGame);
 
             // In-Game Top Bar & Coach Controls
+            document.getElementById('fullscreenBtn').addEventListener('click', () => {
+                const docEl = document.documentElement;
+                if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                    if (docEl.requestFullscreen) {
+                        docEl.requestFullscreen().catch(() => {});
+                    } else if (docEl.webkitRequestFullscreen) {
+                        docEl.webkitRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(() => {});
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    }
+                }
+            });
+
             document.getElementById('openNewGameBtn').addEventListener('click', () => {
                 if (isCoachExpanded) toggleCoachExpand(false);
                 if (isHistoryPanelExpanded) toggleHistoryPanel(false);
